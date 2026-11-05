@@ -15,7 +15,7 @@ import {
 import { createWorld, stepWorld, type World, type WorldConfig } from "./world.ts";
 
 export type Condition = "schema" | "none" | "commands";
-export type Check = "normal" | "windowOff" | "fieldOff";
+export type Check = "normal" | "windowOff" | "fieldOff" | "resourceRandom" | "resourceStill";
 export const conditions: Condition[] = ["schema", "none", "commands"];
 export type TrainingConfig = {
   sizes: number[];
@@ -45,6 +45,15 @@ export type CurvePoint = {
   catching: number;
 };
 export type TrainResult = { condition: Condition; subject: number; points: CurvePoint[] };
+export type DqnEnvironment = { world: WorldConfig; frames: number; discount: number };
+export type DqnJob = {
+  subject: number;
+  iterations: number;
+  evalEvery: number;
+  config: TrainingConfig;
+  environment: DqnEnvironment;
+  checks: Check[];
+};
 export type Phase = "iteration" | "collect" | "update" | "evaluate";
 export type TrainingEvent = {
   iteration: number;
@@ -61,6 +70,7 @@ export type Collector = {
   replay: Replay;
   environmentSteps: number;
   boundarySteps: number;
+  discount: number;
 };
 
 export function conditionConfig(condition: Condition, windowActive = true): WorldConfig {
@@ -75,11 +85,11 @@ export function conditionConfig(condition: Condition, windowActive = true): Worl
 export function appendFrame(observation: Uint8Array, frame: Uint8Array, first: boolean): void {
   if (first) observation.fill(0);
   else observation.copyWithin(0, 200);
-  observation.set(frame, 1800);
+  observation.set(frame, observation.length - 200);
 }
 
 export function clearObservationField(observation: Uint8Array): void {
-  for (let offset = 0; offset < 2000; offset += 200) {
+  for (let offset = 0; offset < observation.length; offset += 200) {
     observation.fill(0, offset + 100, offset + 200);
   }
 }
@@ -94,18 +104,24 @@ export function greedyAction(values: Float64Array, offset = 0, count = values.le
 
 export function createEpsilonPolicy(model: Mlp, rng: Rng): (observation: Uint8Array) => number {
   const batch = createBatch(model, 1);
+  const actions = model.sizes[model.sizes.length - 1]!;
   return (observation) => {
     // One exploration draw per step, plus one action draw only when exploring.
-    if (nextUnit(rng) < 0.2) return nextInt(rng, 16);
+    if (nextUnit(rng) < 0.2) return nextInt(rng, actions);
     batch.activations[0]!.set(observation);
     return greedyAction(forward(model, batch));
   };
 }
 
-export function createCollector(condition: Condition, subject: number): Collector {
-  const config = conditionConfig(condition);
+export function createCollector(
+  condition: Condition | WorldConfig,
+  subject: number,
+  frames = 10,
+  discount = 0.4,
+): Collector {
+  const config = typeof condition === "string" ? conditionConfig(condition) : condition;
   const world = createWorld(config, subject * 1000000 + 1);
-  const observation = new Uint8Array(2000);
+  const observation = new Uint8Array(frames * 200);
   appendFrame(observation, world.frame, true);
   return {
     config,
@@ -113,9 +129,10 @@ export function createCollector(condition: Condition, subject: number): Collecto
     episode: 1,
     world,
     observation,
-    replay: createReplay(),
+    replay: createReplay(10000, observation.length),
     environmentSteps: 0,
     boundarySteps: 0,
+    discount,
   };
 }
 
@@ -129,7 +146,7 @@ export function collectSteps(
     const action = policy(collector.observation);
     if (collector.world.t === 10) {
       // The driver calls the policy on LAST too; this action is ignored by reset.
-      pushReplay(collector.replay, collector.observation, LAST, action, 0, 0.4);
+      pushReplay(collector.replay, collector.observation, LAST, action, 0, collector.discount);
       collector.episode++;
       collector.world = createWorld(
         collector.config,
@@ -147,7 +164,7 @@ export function collectSteps(
       type,
       action,
       collector.world.reward,
-      collector.world.t === 10 ? 0 : 0.4,
+      collector.world.t === 10 ? 0 : collector.discount,
     );
     appendFrame(collector.observation, collector.world.frame, false);
     collector.environmentSteps++;
@@ -189,20 +206,51 @@ export function evaluateDqn(
   check: Check,
   episodes = 200,
 ): { tracking: number; catching: number } {
+  return evaluatePolicy(model, conditionConfig(condition), check, episodes, 1);
+}
+
+export function randomizeResource(action: number, rng: Rng): number {
+  return Math.floor(action / 3) * 3 + nextInt(rng, 3);
+}
+
+// Resource action 0 moves straight down, so the square keeps its starting column.
+export function holdResource(action: number): number {
+  return Math.floor(action / 3) * 3;
+}
+
+export function evaluatePolicy(
+  model: Mlp,
+  config: WorldConfig,
+  check: Check,
+  episodes: number,
+  subject: number,
+): { tracking: number; catching: number } {
+  if ((check === "resourceRandom" || check === "resourceStill") && config.schema !== "free") {
+    throw new Error("Подмена действий ресурса доступна только в свободном режиме");
+  }
   const batch = createBatch(model, 1);
-  const observation = new Uint8Array(2000);
+  const observation = new Uint8Array(model.sizes[0]!);
+  const resourceRng = createRng(subject, 6);
   let tracking = 0;
   let catching = 0;
   for (let episode = 1; episode <= episodes; episode++) {
     const world = createWorld(
-      conditionConfig(condition, check !== "windowOff"),
+      { ...config, windowActive: check !== "windowOff" },
       4000000000 + episode,
     );
     appendFrame(observation, world.frame, true);
     while (world.t < 10) {
       if (check === "fieldOff") clearObservationField(observation);
       batch.activations[0]!.set(observation);
-      stepWorld(world, greedyAction(forward(model, batch)));
+      const action = greedyAction(forward(model, batch));
+      stepWorld(
+        world,
+        check === "resourceRandom"
+          ? randomizeResource(action, resourceRng)
+          : check === "resourceStill"
+            ? holdResource(action)
+            : action,
+      );
       appendFrame(observation, world.frame, false);
     }
     tracking += world.trackingScore;
@@ -215,14 +263,37 @@ export function trainSubject(
   job: TrainJob,
   onEvent?: (event: TrainingEvent) => void,
 ): { model: Mlp; result: TrainResult } {
+  const { model, points } = trainDqn(
+    {
+      subject: job.subject,
+      iterations: job.iterations,
+      evalEvery: job.evalEvery,
+      config: job.config,
+      environment: { world: conditionConfig(job.condition), frames: 10, discount: 0.4 },
+      checks: checksFor(job.condition),
+    },
+    onEvent,
+  );
+  return { model, result: { condition: job.condition, subject: job.subject, points } };
+}
+
+export function trainDqn(
+  job: DqnJob,
+  onEvent?: (event: TrainingEvent) => void,
+): { model: Mlp; points: CurvePoint[] } {
   const model = createMlp(job.config.sizes, createRng(job.subject, 3));
   const adam = createAdam(model.parameters.length);
   const replayRng = createRng(job.subject, 5);
-  const collector = createCollector(job.condition, job.subject);
+  const collector = createCollector(
+    job.environment.world,
+    job.subject,
+    job.environment.frames,
+    job.environment.discount,
+  );
   const policy = createEpsilonPolicy(model, createRng(job.subject, 4));
   const batch = createBatch(model, job.config.batchSize);
   const nextBatch = createBatch(model, job.config.batchSize);
-  const sample = createReplayBatch(job.config.batchSize, 2000);
+  const sample = createReplayBatch(job.config.batchSize, collector.observation.length);
   const targets = new Float64Array(job.config.batchSize);
   const points: CurvePoint[] = [];
   let loss = 0;
@@ -241,16 +312,18 @@ export function trainSubject(
     event("update", "end");
     event("evaluate", "start");
     if (iteration % job.evalEvery === 0 || iteration === job.iterations) {
-      for (const check of checksFor(job.condition)) {
+      for (const check of job.checks) {
         points.push({
           iteration,
           check,
-          ...evaluateDqn(model, job.condition, check, job.config.evalEpisodes),
+          ...evaluatePolicy(
+            model, job.environment.world, check, job.config.evalEpisodes, job.subject,
+          ),
         });
       }
     }
     event("evaluate", "end");
     event("iteration", "end");
   }
-  return { model, result: { condition: job.condition, subject: job.subject, points } };
+  return { model, points };
 }

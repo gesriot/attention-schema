@@ -650,9 +650,11 @@ This tests the same conclusion with another algorithm; it is not an exact replic
 
 Measure:
 
-- usefulness: the difference in results between learned and random resource actions;
-- content: the window position by column from the resource, from the stimulus and from both;
+- usefulness: the difference in results between learned resource actions and two baselines, random actions and a resource that never leaves its starting column;
+- content: the window position by column from the resource, from the stimulus and from both, as lift over the most frequent class;
 - the difficulty of inference from the stimulus.
+
+The motionless baseline is needed because a square left in place already stores the starting column: with a tracking policy it predicts the window's column with about 0.41 accuracy against 0.25 for random actions. An agent that never learned to use the resource would otherwise look as if a schema had emerged.
 
 **Expectation:** the usefulness and content of the resource peak at intermediate noise and relate to the difficulty of inference. In the paper usefulness peaks at 0.5 and difficulty at 0.25, and the relation is assessed qualitatively.[^8]
 

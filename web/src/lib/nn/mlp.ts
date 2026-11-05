@@ -122,6 +122,39 @@ export function huberGradient(
     loss += masks[sample]! * (absolute <= 1 ? 0.5 * error * error : absolute - 0.5);
     outputDelta[index] = (masks[sample]! * Math.max(-1, Math.min(1, error))) / batch.size;
   }
+  backward(model, batch);
+  return loss / batch.size;
+}
+
+export function crossEntropyGradient(model: Mlp, batch: Batch, labels: Uint8Array): number {
+  batch.gradient.fill(0);
+  for (const delta of batch.deltas) delta.fill(0);
+  const last = model.layers.length;
+  const output = model.sizes[last]!;
+  const values = batch.activations[last]!;
+  const delta = batch.deltas[last]!;
+  let loss = 0;
+  for (let sample = 0; sample < batch.size; sample++) {
+    const base = sample * output;
+    let maximum = -Infinity;
+    for (let j = 0; j < output; j++) maximum = Math.max(maximum, values[base + j]!);
+    let sum = 0;
+    for (let j = 0; j < output; j++) {
+      const value = Math.exp(values[base + j]! - maximum);
+      delta[base + j] = value;
+      sum += value;
+    }
+    loss += Math.log(sum) - (values[base + labels[sample]!]! - maximum);
+    for (let j = 0; j < output; j++) {
+      delta[base + j] = (delta[base + j]! / sum - (j === labels[sample] ? 1 : 0)) / batch.size;
+    }
+  }
+  backward(model, batch);
+  return loss / batch.size;
+}
+
+function backward(model: Mlp, batch: Batch): void {
+  const last = model.layers.length;
   for (let l = last - 1; l >= 0; l--) {
     const { input, output, weights, offset } = model.layers[l]!;
     const source = batch.activations[l]!;
@@ -159,5 +192,4 @@ export function huberGradient(
       }
     }
   }
-  return loss / batch.size;
 }

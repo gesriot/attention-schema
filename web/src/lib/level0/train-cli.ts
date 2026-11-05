@@ -1,7 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Worker } from "node:worker_threads";
 import {
   checksFor,
   conditions,
@@ -12,16 +10,11 @@ import {
   type TrainingConfig,
   type TrainResult,
 } from "./dqn.ts";
-import type { Progress, WorkerMessage } from "./train-worker.ts";
+import type { Progress } from "./train-worker.ts";
+import { runStoredJobs } from "./job-runner.ts";
+import { parseTrainingOptions, type TrainingOptions } from "./cli-options.ts";
 
-export type Options = {
-  subjects: number;
-  iterations: number;
-  evalEvery: number;
-  workers: number;
-  conditions: Condition[];
-  out: string | null;
-};
+export type Options = TrainingOptions<Condition>;
 // Single checkpoints swing widely under this training, so the summary averages the last ones.
 const tailPoints = 10;
 const conditionNames: Record<Condition, string> = {
@@ -33,66 +26,12 @@ const checkNames: Record<Check, string> = {
   normal: "норма",
   windowOff: "окно отключено",
   fieldOff: "поле отключено",
+  resourceRandom: "ресурс случаен",
+  resourceStill: "ресурс неподвижен",
 };
 
 export function parseOptions(args: string[]): Options {
-  const result: Options = {
-    subjects: 5,
-    iterations: 1500,
-    evalEvery: 10,
-    workers: 8,
-    conditions: [...conditions],
-    out: null,
-  };
-  const keys = {
-    "--subjects": "subjects",
-    "--iterations": "iterations",
-    "--eval-every": "evalEvery",
-    "--workers": "workers",
-  } as const;
-  const seen = new Set<string>();
-  for (let i = 0; i < args.length; i += 2) {
-    const flag = args[i]!;
-    const value = args[i + 1];
-    if (seen.has(flag) || value === undefined) throw new Error(`Неверный аргумент: ${flag}`);
-    seen.add(flag);
-    if (flag === "--conditions") {
-      const requested = value.split(",");
-      if (
-        requested.length !== new Set(requested).size ||
-        requested.some((name) => !conditions.includes(name as Condition))
-      ) {
-        throw new Error("Допустимые условия: schema,none,commands, без повторов");
-      }
-      result.conditions = conditions.filter((name) => requested.includes(name));
-    } else if (flag === "--out") {
-      result.out = value;
-    } else if (Object.hasOwn(keys, flag)) {
-      const number = Number(value);
-      if (!/^\d+$/.test(value) || !Number.isSafeInteger(number) || number < 1) {
-        throw new Error(`Нужно положительное целое число: ${flag}`);
-      }
-      result[keys[flag as keyof typeof keys]] = number;
-    } else {
-      throw new Error(`Неизвестный аргумент: ${flag}`);
-    }
-  }
-  return result;
-}
-
-// A finished job survives a crash of a long run and is reused only for identical parameters.
-function loadJob(file: string, job: TrainJob): TrainResult | null {
-  if (!existsSync(file)) return null;
-  const saved = JSON.parse(readFileSync(file, "utf8")) as { job: TrainJob; result: TrainResult };
-  if (JSON.stringify(saved.job) !== JSON.stringify(job)) {
-    throw new Error(`Сохранённое обучение получено с другими параметрами: ${file}`);
-  }
-  return saved.result;
-}
-
-function saveJob(file: string, job: TrainJob, result: TrainResult): void {
-  writeFileSync(`${file}.tmp`, JSON.stringify({ job, result }));
-  renameSync(`${file}.tmp`, file);
+  return parseTrainingOptions(args, conditions, 10);
 }
 
 export async function runJobs(
@@ -113,50 +52,14 @@ export async function runJobs(
       });
     }
   }
-  const results: TrainResult[] = new Array(jobs.length);
-  const active = new Set<Worker>();
-  if (options.out !== null) mkdirSync(options.out, { recursive: true });
-  let next = 0;
-  const consume = async () => {
-    while (next < jobs.length) {
-      const index = next++;
-      const job = jobs[index]!;
-      const file =
-        options.out === null ? null : join(options.out, `${job.condition}-${job.subject}.json`);
-      const saved = file === null ? null : loadJob(file, job);
-      if (saved !== null) {
-        results[index] = saved;
-        continue;
-      }
-      results[index] = await new Promise<TrainResult>((resolveResult, reject) => {
-        const worker = new Worker(new URL("./train-worker.ts", import.meta.url), {
-          workerData: job,
-        });
-        active.add(worker);
-        let result: TrainResult | undefined;
-        worker.on("message", (message: WorkerMessage) => {
-          if (message.type === "progress") onProgress?.(job, message.progress);
-          else result = message.result;
-        });
-        worker.once("error", reject);
-        worker.once("exit", (code) => {
-          active.delete(worker);
-          if (code === 0 && result !== undefined) resolveResult(result);
-          else reject(new Error(`Обучение завершилось без результата, код ${code}`));
-        });
-      });
-      if (file !== null) saveJob(file, job, results[index]!);
-    }
-  };
-  try {
-    await Promise.all(Array.from({ length: Math.min(options.workers, jobs.length) }, consume));
-    return results;
-  } catch (error) {
-    // Do not start queued jobs after an error; terminate only this pool's workers.
-    next = jobs.length;
-    await Promise.all([...active].map((worker) => worker.terminate()));
-    throw error;
-  }
+  return runStoredJobs<TrainJob, TrainResult, Progress>({
+    jobs,
+    workers: options.workers,
+    out: options.out,
+    filename: (job) => `${job.condition}-${job.subject}.json`,
+    worker: new URL("./train-worker.ts", import.meta.url),
+    onProgress,
+  });
 }
 
 export function meanAndError(values: number[]): { mean: number; error: number | null } {

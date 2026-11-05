@@ -23,6 +23,7 @@ Experiments:
 ```sh
 npm run level0:check   # level 0: manual checks of the environment
 npm run level0:train   # level 0: DQN training
+npm run level0:emergence   # level 0: schema emergence (E6)
 ```
 
 Command output is in Russian.

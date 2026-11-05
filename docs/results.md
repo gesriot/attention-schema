@@ -60,6 +60,27 @@ Tracking at iteration 30, 5 subjects, mean and standard error; for the authors, 
 
 To reproduce: `npm run level0:train -- --subjects 5 --iterations 30 --eval-every 10 --conditions schema,none`.
 
+## Level 0: E6 checks before the full run
+
+The probes were tested on cases with a known answer, using the truth policy at noise 0.5.
+
+| Resource | Accuracy | Lift over the most frequent class |
+| :-- | --: | --: |
+| Exact copy of the window | 1.000 | 1.000 |
+| Never leaves its starting column | 0.411 | 0.317 |
+| Random actions | 0.249 | 0.130 |
+| Time only, no resource | 0.168 | 0.036 |
+
+**A cheap bypass.** A motionless square stores the starting column, which predicts the window's column because the window follows the ball. So an agent that learned nothing about the resource would beat the random baseline. E6 therefore has a second baseline, a motionless resource, both for usefulness and for the probe. Lift is used because label frequencies differ between sources.
+
+**Difficulty of reading the window's column from the stimulus**, truth policy:
+
+| Noise | 0 | 0.25 | 0.5 | 0.75 | 1 |
+| :-- | --: | --: | --: | --: | --: |
+| Probe accuracy | 0.750 | 0.440 | 0.629 | 0.860 | 1.000 |
+
+The difficulty peaks at p = 0.25, as in Piefke et al. At p = 0 the window itself is invisible, and the column is read from the ball, which the truth policy tracks.
+
 ## Level 0: full run
 
 **Setup:**
