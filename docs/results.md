@@ -1,103 +1,103 @@
-# Результаты стенда
+# Bench results
 
-*Состояние на 4 ноября 2026 г. Постановка – в [spec.md](spec.md). Все числа воспроизводятся командами из каталога `web/`.*
+*Status as of 4 November 2026. The setup is in [spec.md](spec.md). All numbers can be reproduced with commands from the `web/` directory.*
 
-## Уровень 0: ручные проверки
+## Level 0: manual checks
 
-Обучения здесь нет. Проверяется среда опубликованной постановки: зёрна 1–2000, шум 0,5, максимум за эпизод 6.
+There is no training here. This checks the environment of the published setup: seeds 1 to 2000, noise 0.5, a maximum of 6 per episode.
 
-| Вариант | Окно | Политика | Слежение | Ловля | Сумма |
+| Variant | Window | Policy | Tracking | Catch | Total |
 | :-- | :-- | :-- | --: | --: | --: |
-| Уилтерсон, заданная схема | работает | истина | 4,000 | 2,000 | 6,000 |
-| | работает | трекер | 3,554 | 1,780 | 5,334 |
-| | работает | случайная | −2,213 | −0,792 | −3,006 |
-| | отключено | трекер | −0,639 | −0,454 | −1,093 |
-| Пифке, свободная схема | работает | истина | 4,000 | 2,000 | 6,000 |
-| | работает | трекер | 3,505 | 1,774 | 5,279 |
-| | работает | случайная | −0,685 | −0,792 | −1,478 |
-| | отключено | трекер | −0,380 | −0,090 | −0,470 |
+| Wilterson, given schema | on | truth | 4.000 | 2.000 | 6.000 |
+| | on | tracker | 3.554 | 1.780 | 5.334 |
+| | on | random | −2.213 | −0.792 | −3.006 |
+| | off | tracker | −0.639 | −0.454 | −1.093 |
+| Piefke, free schema | on | truth | 4.000 | 2.000 | 6.000 |
+| | on | tracker | 3.505 | 1.774 | 5.279 |
+| | on | random | −0.685 | −0.792 | −1.478 |
+| | off | tracker | −0.380 | −0.090 | −0.470 |
 
-Трекер получает только кадр и помнит свои команды. Схему он не читает.
+The tracker receives only the frame and remembers its own commands. It does not read the schema.
 
-**Что это значит:**
+**What this means:**
 
-- Задача разрешима: политика с доступом к истине набирает ровно 6 на всех зёрнах.
-- Окно нужно: без него трекер падает с 5,33 до −1,09 (контроль C0).
-- Схема для этого не требуется. Ручной трекер набирает по слежению 3,55 из 4 только за счёт памяти своих команд. Обученный DQN со схемой в статье набирает около 3,5. В этой постановке механизм внимания детерминирован, поэтому положение окна полностью определяется начальным положением и командами. Это не значит, что обучаемая сеть без схемы найдёт такое решение: вопрос решает шаг 2.
+- The task is solvable: a policy with access to the truth scores exactly 6 on all seeds.
+- The window is needed: without it the tracker falls from 5.33 to −1.09 (control C0).
+- A schema is not required for this. The hand-written tracker reaches 3.55 out of 4 on tracking from the memory of its own commands alone. The trained DQN with a schema in the paper reaches about 3.5. In this setup the attention mechanism is deterministic, so the window position is fully determined by the starting position and the commands. This does not mean that a learning network without a schema will find such a solution: step 2 answers that.
 
-Одинаковая ловля случайной политики в обоих вариантах не случайна: поток тот же, и бит платформы определяется тем же значением генератора.
+The identical catch of the random policy in both variants is not a coincidence: the stream is the same, and the paddle bit is determined by the same generator value.
 
-**Читаемость окна из одного кадра.** Ручное правило: кандидат – блок 3 × 3 с не более чем одним чёрным пикселем, кадр читаем, если все кандидаты лежат в колонке окна.
+**Readability of the window from one frame.** A hand-written rule: a candidate is a 3 × 3 block with at most one black pixel, and a frame is readable if all candidates lie in the window's column.
 
-| Шум | 0 | 0,25 | 0,5 | 0,75 | 1 |
+| Noise | 0 | 0.25 | 0.5 | 0.75 | 1 |
 | :-- | --: | --: | --: | --: | --: |
-| Доля читаемых кадров | 0 | 0 | 0,204 | 0,891 | 1 |
+| Share of readable frames | 0 | 0 | 0.204 | 0.891 | 1 |
 
-Это нижняя оценка: обучаемая сеть может использовать статистику слабее этого правила.
+This is a lower bound: a learning network can use weaker statistics than this rule.
 
-**Соответствие опубликованным правилам.** Среда сверена с отдельной ручной записью правил обоих опубликованных кодов при нулевом шуме: 324 000 шагов без расхождений по состоянию, награде и кадру. Известное отличие одно: при старте мяча в крайних колонках код Уилтерсона не отсекает начальную колонку окна, а стенд следует статье.
+**Agreement with the published rules.** The environment was checked against a separate hand transcription of the rules of both published codes at zero noise: 324,000 steps with no mismatch in state, reward or frame. There is one known difference: when the ball starts in an edge column, the Wilterson code does not clip the window's starting column, while the bench follows the paper.
 
-Воспроизведение: `npm run level0:check`.
+To reproduce: `npm run level0:check`.
 
-## Уровень 0: DQN, сверка перед полным прогоном
+## Level 0: DQN, check before the full run
 
-Собственный DQN повторяет опубликованную постановку. Опубликованные ноутбуки хранят выводы обучения, поэтому реализацию можно сверить с настоящими кривыми авторов уже на первых итерациях.
+The bench's own DQN repeats the published setup. The published notebooks store their training output, so the implementation can be compared with the authors' real curves from the first iterations.
 
-Слежение на 30-й итерации, 5 субъектов, среднее и стандартная ошибка, у авторов – среднее итераций 28–32:
+Tracking at iteration 30, 5 subjects, mean and standard error; for the authors, the mean of iterations 28 to 32:
 
-| Условие | Авторы | Стенд с первым кадром как в коде авторов | Стенд с первым кадром как в статье |
+| Condition | Authors | Bench with the first frame as in the authors' code | Bench with the first frame as in the paper |
 | :-- | --: | --: | --: |
-| Со схемой | −0,29 | −0,20 ± 0,06 | 0,37 ± 0,05 |
-| Без схемы | −0,64 | −0,62 ± 0,09 | −0,46 ± 0,11 |
+| With schema | −0.29 | −0.20 ± 0.06 | 0.37 ± 0.05 |
+| Without schema | −0.64 | −0.62 ± 0.09 | −0.46 ± 0.11 |
 
-**Что это значит:**
+**What this means:**
 
-- Реализация верна: с воспроизведённым первым кадром стенд попадает в кривые авторов. Для этой сверки поведение кода авторов воспроизводилось во временной копии.
-- Ошибка первого кадра в опубликованном коде существенна. Исправление поднимает обучение со схемой примерно на 0,57 уже к 30-й итерации, разрыв между условиями вырастает с 0,43 до 0,83. Вероятная причина: при исправленном кадре схема сразу показывает начальную колонку мяча. Это предположение, отдельно оно не проверялось.
-- Основной вариант стенда – без этой ошибки, поэтому опорные значения авторов служат качественным ориентиром. Совпадение чисел не ожидается.
+- The implementation is correct: with the first frame reproduced, the bench lands on the authors' curves. For this check the behavior of the authors' code was reproduced in a temporary copy.
+- The first-frame bug in the published code is substantial. Fixing it raises learning with the schema by about 0.57 already by iteration 30, and the gap between conditions grows from 0.43 to 0.83. A likely reason is that with the corrected frame the schema shows the ball's starting column at once. This is a supposition that was not tested separately.
+- The main variant of the bench is free of this bug, so the authors' reference values serve as a qualitative guide. Matching numbers are not expected.
 
-**Независимая проверка компонентов.** Градиент совпал с центральными разностями (наибольшее расхождение 3·10⁻¹⁰), Adam совпал с формулой TensorFlow 2.1 на 400 шагах, в буфере на 1000 шагов собрано 111 эпизодов и все пары корректны.
+**Independent check of components.** The gradient matched central differences (largest difference 3·10⁻¹⁰), Adam matched the TensorFlow 2.1 formula over 400 steps, the buffer collected 111 episodes in 1000 steps, and all pairs are correct.
 
-Воспроизведение: `npm run level0:train -- --subjects 5 --iterations 30 --eval-every 10 --conditions schema,none`.
+To reproduce: `npm run level0:train -- --subjects 5 --iterations 30 --eval-every 10 --conditions schema,none`.
 
-## Уровень 0: полный прогон
+## Level 0: full run
 
-**Постановка:**
+**Setup:**
 
-- 3 условия по 5 субъектов, 1500 итераций, проверка раз в 10 итераций по 200 эпизодов.
-- Первый кадр как в статье. Условие «Команды» – наше дополнение: вместо схемы сеть получает номер своей последней команды.
-- Числа – среднее последних 10 проверок (итерации 1410–1500) по каждому субъекту, затем среднее и стандартная ошибка по субъектам. Отдельные проверки сильно колеблются. У авторов – среднее последних 100 итераций.
+- 3 conditions with 5 subjects each, 1500 iterations, a test every 10 iterations with 200 episodes.
+- The first frame as in the paper. The "Commands" condition is our addition: instead of a schema the network receives the number of its last command.
+- Numbers are the mean of the last 10 tests (iterations 1410 to 1500) for each subject, then the mean and standard error over subjects. Individual tests fluctuate strongly. For the authors, the mean of the last 100 iterations.
 
-| Обучение | Проверка | Слежение из 4 | Ловля из 2 | Авторы: слежение | Авторы: ловля |
+| Training | Test | Tracking out of 4 | Catch out of 2 | Authors: tracking | Authors: catch |
 | :-- | :-- | --: | --: | --: | --: |
-| Схема | Норма | 3,57 ± 0,01 | 1,04 ± 0,06 | 3,38 | 0,83 |
-| Схема | Окно отключено | 0,23 ± 0,13 | −0,46 ± 0,04 | 0,15 | −0,42 |
-| Схема | Схема отключена | −0,69 ± 0,25 | −0,14 ± 0,02 | −0,46 | −0,22 |
-| Без схемы | Норма | 1,13 ± 0,06 | −0,25 ± 0,04 | 0,34 | −0,26 |
-| Без схемы | Окно отключено | −0,50 ± 0,02 | −0,47 ± 0,04 | −0,49 | −0,43 |
-| Команды | Норма | 1,76 ± 0,06 | −0,25 ± 0,09 | – | – |
-| Команды | Окно отключено | −0,30 ± 0,04 | −0,54 ± 0,06 | – | – |
-| Команды | Команды отключены | 0,97 ± 0,06 | −0,37 ± 0,07 | – | – |
+| Schema | Normal | 3.57 ± 0.01 | 1.04 ± 0.06 | 3.38 | 0.83 |
+| Schema | Window off | 0.23 ± 0.13 | −0.46 ± 0.04 | 0.15 | −0.42 |
+| Schema | Schema off | −0.69 ± 0.25 | −0.14 ± 0.02 | −0.46 | −0.22 |
+| No schema | Normal | 1.13 ± 0.06 | −0.25 ± 0.04 | 0.34 | −0.26 |
+| No schema | Window off | −0.50 ± 0.02 | −0.47 ± 0.04 | −0.49 | −0.43 |
+| Commands | Normal | 1.76 ± 0.06 | −0.25 ± 0.09 | – | – |
+| Commands | Window off | −0.30 ± 0.04 | −0.54 ± 0.06 | – | – |
+| Commands | Commands off | 0.97 ± 0.06 | −0.37 ± 0.07 | – | – |
 
-Парные разности в норме, 5 субъектов:
+Paired differences in the normal test, 5 subjects:
 
-| Сравнение | Слежение | Ловля | Знак у всех субъектов |
+| Comparison | Tracking | Catch | Same sign for all subjects |
 | :-- | --: | --: | :-- |
-| Схема минус без схемы | 2,45 ± 0,05 | 1,29 ± 0,06 | Да, в обоих столбцах |
-| Схема минус команды | 1,81 ± 0,06 | 1,29 ± 0,08 | Да, в обоих столбцах |
-| Команды минус без схемы | 0,64 ± 0,05 | 0,00 ± 0,10 | Только по слежению |
+| Schema minus no schema | 2.45 ± 0.05 | 1.29 ± 0.06 | Yes, in both columns |
+| Schema minus commands | 1.81 ± 0.06 | 1.29 ± 0.08 | Yes, in both columns |
+| Commands minus no schema | 0.64 ± 0.05 | 0.00 ± 0.10 | Only for tracking |
 
-**Вердикт:**
+**Verdict:**
 
-- **Опубликованный результат воспроизведён качественно.** Со схемой агент учится намного лучше, чем без неё. Отключение схемы после обучения рушит слежение, отключение окна – сильнее бьёт по ловле, как и у авторов.
-- **История команд схему не заменила.** В рамках этого бюджета она дала только часть выигрыша по слежению и ничего по ловле.
-- **Роль схемы как модели внимания здесь не доказана.** Ручной трекер набирает 3,55 и 1,78 на тех же сведениях, что и условие «Команды». Значит, сведений достаточно, а разница в том, как легко сеть их использует. Механизм внимания в этой постановке детерминирован, и схема равна сумме команд. Сеть без памяти плохо суммирует сама и получает готовый ответ. Отличить модель внимания от интегратора команд можно только там, где команда не определяет фокус, то есть в целевом режиме.
+- **The published result is reproduced qualitatively.** With a schema the agent learns much better than without it. Turning the schema off after training destroys tracking, and turning the window off hurts the catch more, as in the paper.
+- **Command history did not replace the schema.** Within this budget it gave only part of the gain in tracking and nothing in the catch.
+- **The schema's role as a model of attention is not proven here.** The hand-written tracker reaches 3.55 and 1.78 on the same information as the "Commands" condition. So the information is sufficient, and the difference lies in how easily the network can use it. The attention mechanism in this setup is deterministic, and the schema equals the sum of commands. A network without memory sums poorly by itself and gets a ready answer. A model of attention can be told apart from a command integrator only where the command does not determine the focus, which means the target mode.
 
-**Ограничения:**
+**Limitations:**
 
-- Обучение без схемы и с командами к концу ещё улучшается: за последние 300 итераций на 0,17 и 0,22 против 0,09 со схемой. Разрыв может сократиться при более долгом обучении.
-- Сравнение условий не равноценно по форме: схема дана картой, совмещённой с полем, а команда – номером действия.
-- Исправленный первый кадр, вероятно, поднял результат без схемы: 1,13 против 0,34 у авторов. Значит, опубликованный разрыв, возможно, отчасти завышен ошибкой первого кадра. Прогона с ошибкой на полную длину не было, поэтому это предположение.
-- 5 субъектов. Лучший результат по ловле ниже ручного трекера: 1,04 против 1,78.
+- Training without a schema and with commands is still improving at the end: by 0.17 and 0.22 over the last 300 iterations, against 0.09 with the schema. The gap may shrink with longer training.
+- The conditions differ in form: the schema is given as a map aligned with the field, the command as an action number.
+- The corrected first frame probably raised the result without a schema: 1.13 against the authors' 0.34. The published gap may therefore be partly inflated by the first-frame bug. There was no full-length run with the bug, so this is a supposition.
+- 5 subjects. The best catch result is below the hand-written tracker: 1.04 against 1.78.
 
-Воспроизведение: `npm run level0:train -- --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/level0`, около 6,5 часа на 8 потоках.
+To reproduce: `npm run level0:train -- --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/level0`, about 6.5 hours on 8 threads.

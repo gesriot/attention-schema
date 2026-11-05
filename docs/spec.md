@@ -1,190 +1,190 @@
-# ТЗ: минимальный стенд функциональных предпосылок сознания по теории схемы внимания Грациано
+# Specification: a minimal bench for the functional prerequisites of consciousness under Graziano's attention schema theory
 
-*Сверено с первоисточниками 4 ноября 2026 г. Стенд реализуется сначала на TypeScript, затем на Rust с побайтной сверкой. Оговорки о неполной сверке указаны в списке источников.*
+*Checked against primary sources on 4 November 2026. The bench is implemented first in TypeScript, then in Rust with byte-for-byte comparison. Caveats about incomplete checks are listed under Sources.*
 
-## Задача
+## Task
 
-Пишем минимальный агент, у которого есть реальное внимание, упрощённая модель этого внимания и причинно действующая связь этой модели с управлением и отчётом. Это не ТЗ на программу с квалиа. Теория схемы внимания (Attention Schema Theory, AST) Майкла Грациано не обещает, что нужная архитектура породит переживание. Грациано пишет, что AST «не даёт рецепта, как заставить возникнуть магическую сущность опыта». По AST вопрос о том, есть ли у машины «эфирные» внутренние чувства, бессмыслен: их нет ни у неё, ни у нас. Осмыслен другой вопрос: есть ли у системы глубокие автоматические модели собственных процессов и утверждает ли она на их основе, что обладает опытом.[^3] Это позиция теории, а не установленный факт. Современные подходы к оценке машинного сознания предлагают индикаторы, а не тест, удостоверяющий переживание.[^13]
+We are building a minimal agent with real attention, a simplified model of that attention, and a causally effective link from that model to control and report. This is not a specification for a program with qualia. Michael Graziano's Attention Schema Theory (AST) does not promise that the right architecture will produce experience. Graziano writes that AST "does not give a prescription for how to make a magical essence of experience emerge". Under AST, asking whether a machine has "ethereal" internal feelings is a nonsensical question: it does not have them, and neither do we. The meaningful question is different: does the system have deep, automatic models of its own processes, and does it assert on their basis that it has experience?[^3] This is the theory's position, not an established fact. Current approaches to assessing machine consciousness offer indicators, not a test that certifies experience.[^13]
 
-Поэтому строим **не чат-бота с самоотчётами, а маленькую лабораторию управления вниманием**. Агент отслеживает объект при шуме и помехах, реальное внимание меняет то, что он может воспринять, а обучаемая модель внимания оценивает и предсказывает это состояние. Главный предмет проверки – причинная цепочка: ошибка модели меняет управление и отчёт при неизменных внимании и восприятии.
+So we are building **not a chatbot with self-reports but a small laboratory of attention control**. The agent tracks an object through noise and distraction, real attention changes what it can perceive, and a learned model of attention estimates and predicts that state. The main object of the test is a causal chain: an error in the model changes control and report while attention and perception stay the same.
 
-**Главная оговорка исходит от самого Грациано.** В статье 2026 года он пишет, что искусственные агенты со схемой внимания показывают лишь скромную пользу, работают на очень малых сетях и «не имеют ясной связи с человеческим сознанием». Его текущая догадка: все эти начальные подходы «пошли в неверном направлении», а нужно нечто более простое и фундаментальное.[^4] Этот стенд относится к тому же классу. Он проверяет управляющую функцию схемы, а не AST как теорию сознания. Что это значит для архитектуры, сказано в разделе «Что именно проверяем».
+**The main caveat comes from Graziano himself.** In his 2026 article he writes that artificial agents with attention schemas show only "modest benefits", use very small networks and "have no clear relationship to human consciousness". His current guess is that all these initial approaches "have gone in the wrong direction", and that "something much simpler and much more fundamental is needed".[^4] This bench belongs to the same class. It tests the control function of the schema, not AST as a theory of consciousness. The section "What exactly we test" explains what this means for the architecture.
 
-## Теория схемы внимания: что именно утверждается
+## Attention schema theory: what exactly it claims
 
-Сводка составлена по обзорам Грациано 2017–2026 годов[^1][^3][^5][^6], по Webb & Graziano 2015[^2] и по вычислительным работам 2021–2026 годов[^7][^8][^9][^10][^11].
+This summary draws on Graziano's reviews from 2017 to 2026[^1][^3][^5][^6], on Webb & Graziano 2015[^2] and on computational work from 2021 to 2026[^7][^8][^9][^10][^11].
 
-| Компонент | Что говорит источник | Следствие для стенда |
+| Component | What the source says | Consequence for the bench |
 | :-- | :-- | :-- |
-| Принцип 1 | «Информация, которая выходит из мозга, должна была быть в мозге». Всё, что человек думает и утверждает о своём сознании, выводится из информации в мозге. Обладать сознанием и верить, что обладаешь им, – разные вещи[^1] | Отчёт агента о собственном внимании причинно выводится из информации, доступной самому агенту, а не из диагностического кода |
-| Принцип 2 | «Модели мозга никогда не точны». Это не пустые иллюзии, а карикатуры: они отражают реальный процесс, упрощая и искажая его[^1] | Схема – не копия состояния внимания. Её ошибки входят в предмет исследования |
-| Процесс A | Внимание – реальный процесс: сигналы конкурируют за ограниченные ресурсы обработки (biased competition)[^2]. Одни представления усиливаются, другие подавляются, снизу вверх или сверху вниз, и усиленные сильнее влияют на последующие системы[^4]. Модель строится именно для этого процесса[^1] | Реальный механизм внимания и его модель разведены физически. Механизм – конкуренция за ограниченный ресурс |
-| Что считать вниманием | В 2026 году Грациано считает главным препятствием выбор того, что именно моделировать. Он предлагает внимание в смысле Джеймса, не привязанное к механизму: представления временно усиливаются и получают возможность влиять на выход[^4] | Состояние внимания описывается как доля ресурса на представлении, а не как положение окна |
-| Содержание схемы | Описание состояния внимания и предсказания: как оно изменится и как повлияет на решения, память и поведение[^1]. Схема больше говорит о предсказательных связях внимания с другими процессами и средой, чем о нём самом. Деталей механизма в ней нет, и объекта внимания она не представляет[^4] | Главное в схеме – предсказание последствий, а не координаты фокуса |
-| Автоматичность | Схема строится автоматически и непрерывно, её нельзя включить, выключить или изменить по выбору. Она работает, даже когда к ней нет доступа для отчёта[^4] | Обновление схемы не входит в выбор контроллера. Управление читает её напрямую, отчёт – через отношение $r_t$ |
-| Расхождение | Модели себя прежде всего предсказательны. Расхождение с реальностью запускает реакцию: исправить объект или обновить модель[^4] | В Э2Б проверяются обе реакции |
-| Управление | Хорошему регулятору нужна модель управляемого объекта[^7][^19]. Без схемы эндогенное управление вниманием должно страдать[^1] | Контроллер использует схему. Теория говорит о модели, а не об отдельном модуле: неявная модель тоже считается |
-| Предсказания теории управления | Без внутренней модели внимание менее устойчиво в нужном состоянии, хуже покидает ненужное и легче возмущается извне[^14]. Общая сила внимания при этом не обязана падать: меняется его профиль во времени[^14][^15] | Прямые меры для абляции. Падения одного среднего результата недостаточно |
-| Триада S + A + V | Чтобы заключить, что он осознаёт яблоко, мозгу нужны модель объекта (V), модель себя (S) и модель связи между ними, то есть внимания (A)[^2]. В 2026 году это место описано как рабочее пространство, где сенсорные модели и модели себя соотносятся и влияют на действия. Само оно сознания не порождает[^4] | Нужно реляционное представление «этот агент – его внимание – этот объект» |
-| Три функции | Модель своего внимания служит эндогенному управлению, модель чужого – теории разума, а содержимое этих моделей приводит к утверждениям о сознании[^15][^1] | В MVP – управление и невербальный отчёт. Социальная функция – расширение |
-| Связь функций | Одно из самых конкретных предсказаний AST: если схема не отразила состояние внимания, человек не может ни управлять этим фокусом, ни сообщить о переживании. Формула: не «сознание есть внимание», а «сознание необходимо для управления вниманием»[^1] | Одна и та же ошибка схемы должна одновременно менять управление и отчёт |
-| Диссоциация | Без осознания стимула внимание к нему возможно, но оно не стабилизируется, не подстраивается по значимости, не сдвигается с упреждением[^3] и не подавляется у отвлекающего стимула[^1][^17]. Экзогенный эффект сохраняется, а эндогенный почти исчезает[^15]. Сам Грациано отмечает, что данные получены на коротких зрительных стимулах и им не хватает общности[^3] | Ожидаемый профиль абляции: захват сохранён, управление потеряно |
-| Тонкий иллюзионизм | Модель искажает, а не выдумывает: реальный процесс есть, но изображается схематично[^3]. Само слово «иллюзия» Грациано в 2026 году избегает или сильно оговаривает: модели полезны и описывают реальные вещи[^4]. Различаются i-сознание (от information) и m-сознание (от mysterious)[^6] | Внимание в стенде – реальный процесс. Стенд изучает модель, а не имитирует «иллюзию» |
-| Условия для машины | Нужны избирательное внимание, схема внимания, такие же упрощения и искажения, как у человека, и доступ высшей когниции к схеме. Тогда агент сам заключит и заявит, что обладает сознанием[^3]. В 2026 году условие расширено: нужен похожий набор схем себя для похожих функций[^4] | MVP реализует первые два условия и частично четвёртое. Человеческих искажений и утверждений в нём нет. **Сознания в смысле AST стенд не реализует даже при полном успехе** |
-| Возникновение | Схема не обязана быть встроена: при свободном управляемом ресурсе она возникает, и она тем полезнее, чем труднее вывести внимание из стимула[^8] | Версия B стенда |
-| Общество схем | Обобщение до «более общей теории схем»: схемы внимания, решений, эмоций, тела и персоны[^4] | Расширение за пределами MVP |
-| Индикатор | AST-1: «предсказательная модель, представляющая текущее состояние внимания и позволяющая им управлять»[^13] | Формулировка цели стенда |
+| Principle 1 | "Information that comes out of a brain must have been in that brain." Everything a person thinks and claims about their consciousness derives from information in the brain. Having consciousness and believing you have it are different things[^1] | The agent's report about its own attention derives causally from information available to the agent, not from diagnostic code |
+| Principle 2 | "The brain's models are never accurate." They are not empty illusions but caricatures: they reflect a real process while simplifying and distorting it[^1] | The schema is not a copy of the attention state. Its errors are part of what is studied |
+| Process A | Attention is a real process: signals compete for limited processing resources (biased competition)[^2]. Some representations are enhanced and others suppressed, bottom-up or top-down, and the enhanced ones have greater impact on downstream systems[^4]. The model is built for this process[^1] | The real attention mechanism and its model are physically separated. The mechanism is competition for a limited resource |
+| What counts as attention | In 2026 Graziano sees the main obstacle in choosing what exactly to model. He proposes attention in James's sense, unanchored to a specific mechanism: representations temporarily rise in activity and can influence the output[^4] | The attention state is described as the share of resource on a representation, not as the position of a window |
+| Schema content | A description of the state of attention and predictions: how it will change and how it will affect decisions, memory and behavior[^1]. The schema is more about predictive relationships between attention, other processes and the environment than about attention itself. It contains no mechanistic details and does not represent the attended object[^4] | The core of the schema is predicting consequences, not the coordinates of the focus |
+| Automaticity | The schema is built automatically and continuously. It cannot be turned on, turned off or modified by choice. It works even when there is no access to it for report[^4] | Updating the schema is not one of the controller's choices. Control reads it directly, report reads it through the relation $r_t$ |
+| Discrepancy | Self-models are predictive in the first place. A discrepancy with reality triggers a reaction: adjust the object or update the model[^4] | E2B tests both reactions |
+| Control | A good regulator needs a model of the thing it controls[^7][^19]. Without a schema, endogenous control of attention should suffer[^1] | The controller uses the schema. The theory speaks of a model, not of a separate module: an implicit model counts too |
+| Control-theory predictions | Without an internal model, attention is less stably maintained in the desired state, less able to leave an undesired state, and more easily perturbed from outside[^14]. Overall strength of attention need not fall: what changes is its time course[^14][^15] | Direct measures for ablation. A drop in the mean result alone is not enough |
+| The S + A + V triad | To conclude that it is aware of an apple, the brain needs a model of the object (V), a model of the self (S), and a model of the relation between them, which is attention (A)[^2]. In 2026 this place is described as a workspace where sensory models and self-models are interrelated and can affect action. It does not itself generate consciousness[^4] | A relational representation is needed: "this agent, its attention, this object" |
+| Three functions | A model of one's own attention serves endogenous control, a model of others' attention serves theory of mind, and the contents of these models lead to claims of consciousness[^15][^1] | The MVP covers control and nonverbal report. The social function is an extension |
+| Link between functions | One of the most specific predictions of AST: if the schema fails to model a state of attention, a person can neither control that focus nor report an experience of it. The formula is not "consciousness is attention" but "consciousness is necessary for the control of attention"[^1] | One and the same schema error should change control and report together |
+| Dissociation | Without awareness of a stimulus, attention to it is possible, but it is not stabilized, not adjusted by relevance, not shifted in anticipation[^3] and not suppressed on a distractor[^1][^17]. The exogenous effect remains while the endogenous one almost disappears[^15]. Graziano himself notes that these data come from brief visual stimuli and lack generality[^3] | Expected ablation profile: capture preserved, control lost |
+| Subtle illusionism | The model distorts rather than invents: a real process exists but is depicted schematically[^3]. In 2026 Graziano avoids or heavily qualifies the word "illusion": the models are useful and depict real things[^4]. He distinguishes i-consciousness (information) from m-consciousness (mysterious)[^6] | Attention in the bench is a real process. The bench studies the model and does not imitate an "illusion" |
+| Conditions for a machine | Selective attention, an attention schema, the same simplifications and distortions as in humans, and access of higher cognition to the schema. The agent would then conclude and assert that it is conscious[^3]. In 2026 the condition is widened to a similar suite of self-schemas used for similar functions[^4] | The MVP implements the first two conditions and part of the fourth. It has neither human distortions nor assertions. **The bench does not implement consciousness in the AST sense even if it succeeds completely** |
+| Emergence | The schema need not be built in: given a free controllable resource it emerges, and it is more useful the harder attention is to infer from the stimulus[^8] | Version B of the bench |
+| Society of schemas | Generalization to "a more general schema theory": attention, decision, emotion and body schemas and personas[^4] | Extension beyond the MVP |
+| Indicator | AST-1: "A predictive model representing and enabling control over the current state of attention"[^13] | Statement of the bench's goal |
 
-Сам Грациано оговаривал, что AST «ещё недостаточно конкретна, чтобы передать инженеру чертёж»[^5]. Значит, всё, что ниже названо архитектурой, – инженерная интерпретация, а не опубликованный алгоритм.
+Graziano himself cautioned that AST "is not yet specific enough to hand a blueprint to an engineer".[^5] Everything called architecture below is therefore an engineering interpretation, not a published algorithm.
 
-## Что именно проверяем
+## What exactly we test
 
-Нужно разделить три уровня:
+Three levels must be kept apart:
 
-| Уровень | Что означает |
+| Level | Meaning |
 | :-- | :-- |
-| **Положения AST** | Теоретическая мотивация: схема как упрощённая модель внимания, её роль в управлении, связь с отчётом.[^1][^3] |
-| **Предлагаемая архитектура** | Конкретная инженерная интерпретация, а не алгоритм, опубликованный Грациано |
-| **Проверяемый результат** | Демонстрация функций и их причинной роли, а не доказательство феноменального опыта |
+| **Claims of AST** | Theoretical motivation: the schema as a simplified model of attention, its role in control, its link to report.[^1][^3] |
+| **Proposed architecture** | A specific engineering interpretation, not an algorithm published by Graziano |
+| **Testable result** | A demonstration of functions and their causal role, not a proof of phenomenal experience |
 
-Внутри AST стенд проверяет разные гипотезы, и их нельзя смешивать:
+Within AST the bench tests several hypotheses that must not be mixed:
 
-1. **Регулятор.** Для эндогенного управления вниманием нужна информация о состоянии внимания в какой угодно форме. Это прямое следствие теории.
-2. **Явная схема.** Обучаемая схема даёт преимущество перед контролем с теми же ресурсами. Это инженерная гипотеза. Её провал не опровергает пункт 1: неявная модель внутри контроля тоже модель.
-3. **Предсказание.** Предсказательная схема сильнее чисто описательной. Именно предсказание отделяет AST-1 от системы 2021 года.[^13]
-4. **Связь функций.** Ошибка схемы при неизменных внимании и восприятии вместе меняет управление и отчёт. Самое конкретное предсказание теории.[^1]
-5. **Возникновение.** Схема формируется там, где внимание важно и трудно отслеживается. Это результат Piefke et al., а не положение AST.[^8]
+1. **Regulator.** Endogenous control of attention needs information about the state of attention, in any form. This follows directly from the theory.
+2. **Explicit schema.** A learned schema gives an advantage over a control with the same resources. This is an engineering hypothesis. Its failure does not refute item 1: an implicit model inside the control is still a model.
+3. **Prediction.** A predictive schema is stronger than a purely descriptive one. Prediction is what separates AST-1 from the 2021 system.[^13]
+4. **Link between functions.** A schema error, with attention and perception unchanged, changes control and report together. This is the most specific prediction of the theory.[^1]
+5. **Emergence.** A schema forms where attention matters and is hard to track. This is a result of Piefke et al., not a claim of AST.[^8]
 
-Стенд, где схема дана готовой, проверяет только пользу описания. Стенд без отчёта не проверяет гипотезу 4.
+A bench where the schema is given ready-made tests only the usefulness of a description. A bench without report does not test hypothesis 4.
 
-**Что следует из оговорки Грациано 2026 года.** Его критика направлена на вопрос, какое внимание моделировать и какой должна быть машина, которая «думает», что она сознательна. Предлагаемая им альтернатива опирается на большие языковые модели.[^4] Отсюда три следствия:
+**What follows from Graziano's 2026 caveat.** His criticism concerns which attention should be modeled and what a machine that "thinks" it is conscious would need. The alternative he proposes relies on large language models.[^4] Three consequences follow:
 
-- **Граница вывода.** Стенд проверяет управляющую функцию. Положительный результат не подтверждает AST как теорию сознания, а отрицательный её не опровергает: он относится к малым системам этого класса.
-- **Что взято в архитектуру.** Внимание – конкуренция представлений за ресурс, а не окно на изображении. Схема – прежде всего предсказание последствий. Схема обновляется автоматически.
-- **Ожидание размера эффекта.** Резкий разрыв 2021 года не служит нормой: сам автор говорит теперь о скромной пользе.[^4] Тот разрыв получен при готовой безошибочной схеме и в задаче, где другой источник сведений о внимании малая сеть использует плохо.[^7]
+- **Limit of inference.** The bench tests the control function. A positive result does not confirm AST as a theory of consciousness, and a negative one does not refute it: it applies to small systems of this class.
+- **What goes into the architecture.** Attention is competition among representations for a resource, not a window on an image. The schema is above all a prediction of consequences. The schema updates automatically.
+- **Expected effect size.** The sharp gap from 2021 is not the norm: the author himself now speaks of modest benefits.[^4] That gap came from a ready-made error-free schema and from a task where a small network uses other sources of information about attention poorly.[^7]
 
-Отличия от стенда [`coherence-lab`](https://github.com/gesriot/coherence-lab), построенного по модели Йоши Баха:
+Differences from the [`coherence-lab`](https://github.com/gesriot/coherence-lab) bench, built on Joscha Bach's model:
 
-| Вопрос | Модель Баха | AST |
+| Question | Bach's model | AST |
 | :-- | :-- | :-- |
-| Целевая функция | Когерентность, которую реально минимизирует процесс | Её нет: внешняя задача и предсказание собственного внимания |
-| Второй порядок | Восприятие собственного восприятия в том же цикле, отделено от higher-order thought | Отдельная упрощённая модель; AST можно считать теорией высшего порядка[^13] |
-| Что управляется | Положение сенсорного окна | Распределение ограниченного ресурса обработки при неподвижном сенсоре |
-| Сильная форма | Genesis: сознание – алгоритм обучения | Возникновение схемы – отдельная гипотеза, AST её не требует |
-| Что проверка показывает | Ускоряет ли контур формирование моделей мира | Зависит ли управление и отчёт от модели внимания |
+| Objective function | Coherence, actually minimized by the process | None: an external task and prediction of one's own attention |
+| Second order | Perception of one's own perception in the same cycle, distinct from higher-order thought | A separate simplified model; AST can be seen as a higher-order theory[^13] |
+| What is controlled | The position of a sensor window | The distribution of a limited processing resource with a fixed sensor |
+| Strong form | Genesis: consciousness is a learning algorithm | Emergence of the schema is a separate hypothesis that AST does not require |
+| What the test shows | Whether the loop speeds up the formation of world models | Whether control and report depend on a model of attention |
 
-**Термин «обязательно» дальше означает обязательность для предлагаемого эксперимента, а не установленную необходимость для любого возможного сознания.**
+**The word "required" below means required for the proposed experiment, not an established necessity for any possible consciousness.**
 
-## Где будет «воспринимающий»
+## Where the "perceiver" is
 
-Короткий ответ: **нигде как отдельный компонент**. Отдельного наблюдателя создавать нельзя: он дал бы регресс вместо объяснения.
+The short answer: **nowhere as a separate component**. A separate observer must not be built: it would give a regress instead of an explanation.
 
-| Вопрос | Ответ в реализации | Чего недостаточно |
+| Question | Answer in the implementation | What is not enough |
 | :-- | :-- | :-- |
-| Где представлено «красное»? | В перцептивной модели $z_t$ | Вектор признаков ничего не говорит о доступе агента к ним |
-| Где реально выделяется объект? | В механизме внимания $a_t$ | Веса внимания сами по себе – фильтрация, а не схема |
-| Где представлено «моё внимание на этом объекте»? | В схеме $s_t$ и реляционном состоянии $r_t$ | Лог, не влияющий на управление |
-| Кто читает эти представления? | Контроллер внимания и выбор ответа | Дополнительного зрителя над ними нет |
-| Почему внимание описывается как непосредственное обладание? | Схема не содержит механизма: она описывает результат, а не индексы и веса | Подача полной телеметрии без сжатия – дамп памяти, а не модель |
+| Where is "red" represented? | In the perceptual model $z_t$ | A feature vector says nothing about the agent's access to it |
+| Where is the object actually selected? | In the attention mechanism $a_t$ | Attention weights alone are filtering, not a schema |
+| Where is "my attention is on this object" represented? | In the schema $s_t$ and the relational state $r_t$ | A log that does not affect control |
+| Who reads these representations? | The attention controller and the choice of response | There is no additional viewer above them |
+| Why is attention described as direct possession? | The schema contains no mechanism: it describes the result, not indices and weights | Feeding full uncompressed telemetry gives a memory dump, not a model |
 
-Схема – не приёмник, попав в который информация становится осознанной. Сведения об объекте в ней не содержатся. Она добавляет к ним информацию о том, что на объекте есть внимание.[^15]
+The schema is not a receptacle that makes information conscious when it enters. It does not contain information about the object. It adds to that information the fact that attention is on the object.[^15]
 
-Предлагаемая петля:
+The proposed loop:
 
 ```text
-Мир → сенсор → механизм внимания → содержание восприятия z → действие
+World → sensor → attention mechanism → perceptual content z → action
                      ↑      ↓               ↓
-          команда внимания  телеметрия p    │
+        attention command   telemetry p     │
                      ↑      ↓               ↓
-                контроллер ← схема внимания s ← модель себя e
+                controller ← attention schema s ← self-model e
                      ↑               ↓
-                     └── отношение r: «агент – внимание – объект»
+                     └── relation r: "agent, attention, object"
 ```
 
-**«Воспринимающим» здесь можно назвать только работающий контур целиком.** По AST дело не в том, что он «видит» содержимое. Система строит и использует информацию о собственном избирательном отношении к содержанию. Если такая информация лежит в основе управления и отчёта, это и есть всё, что теория предлагает объяснять.[^1][^3]
+**Only the working loop as a whole can be called the "perceiver" here.** Under AST the point is not that it "sees" the content. The system builds and uses information about its own selective relation to the content. If that information underlies control and report, this is all the theory proposes to explain.[^1][^3]
 
-Остаётся открытым принципиальный вопрос: достаточно ли этого объяснения? Грациано отвечает «да», считая вопрос о дополнительном переживании некорректным.[^3] Индикаторные подходы этого ответа не принимают как общепринятый.[^13] Стенд этот спор не решает, поэтому в коде не должно быть класса `Consciousness`.
+A fundamental question stays open: is this explanation sufficient? Graziano says yes and considers the question of additional experience ill-posed.[^3] Indicator approaches do not accept this answer as settled.[^13] The bench does not resolve this dispute, so the code must not contain a `Consciousness` class.
 
-## Минимальная экспериментальная среда
+## Minimal experimental environment
 
-Среда существует в двух режимах. Уровень 0 воспроизводит опубликованную постановку, чтобы привязать стенд к известным результатам. Целевой режим устраняет её упрощения.
+The environment has two modes. Level 0 reproduces the published setup to anchor the bench to known results. The target mode removes its simplifications.
 
-### Уровень 0: опубликованная постановка
+### Level 0: the published setup
 
-| Параметр | Значение[^7][^20] |
+| Parameter | Value[^7][^20] |
 | :-- | :-- |
-| Зрительное поле | 10 × 10, чёрный или серый пиксель. Нижний ряд без шума, в нём платформа из 3 пикселей |
-| Шум | На каждом кадре ровно 50 случайных клеток из 100 чёрные. В статье это описано как вероятность 50% для каждого пикселя |
-| Окно внимания | 3 × 3, шум внутри убран полностью. В начале эпизода окно автоматически на мяче |
-| Схема | Второй массив 10 × 10 с чёрным квадратом 3 × 3 в положении окна |
-| Вход | 20 × 10 на кадр, буфер из 10 кадров 200 × 10. Новый кадр вытесняет самый старый |
-| Мяч | Старт и финиш случайны и независимы. По диагонали до колонки финиша, затем вертикально, одна строка за шаг |
-| Действия | 8 сдвигов окна на клетку, 2 сдвига платформы. Движения на месте нет |
-| Награда | ±0,5 за мяч в окне на кадрах 2–9, ±2 за ловлю на кадре 10, на первом кадре награды нет. Максимум 6: 4 за внимание и 2 за ловлю. В статье указаны 5 и 7, но в коде 10 кадров дают только 8 наград за внимание |
-| Сеть | DQN, 16 выходов, три скрытых слоя по 200 |
-| Обучение | Adam 0,001, ε = 0,2 при сборе, жадная политика при проверке. Буфер 10 000 переходов |
-| Итерация | 1000 переходов сбора (около 111 игр, а не 100), 100 обновлений по батчу из 100 пар, затем проверка по 50 игр на условие. Всего 1500 итераций |
-| Дисконт | 0,4 на нетерминальных переходах задан в среде, γ агента не задан |
-| Умолчания библиотеки | Target копируется при каждом обновлении, потери Хубера, без отсечения градиента, ReLU, n-step = 1. Веса скрытых слоёв – VarianceScaling (2, fan_in, усечённое нормальное). Выходной слой: равномерно ±0,03, смещение −0,2 |
-| Субъекты | 5 независимых инициализаций |
+| Visual field | 10 × 10, black or gray pixels. The bottom row has no noise and holds a 3-pixel paddle |
+| Noise | Exactly 50 random cells out of 100 are black on each frame. The paper describes this as a 50% probability per pixel |
+| Attention window | 3 × 3, noise fully removed inside. At the start of an episode the window is automatically on the ball |
+| Schema | A second 10 × 10 array with a black 3 × 3 square at the window position |
+| Input | 20 × 10 per frame, a buffer of 10 frames, 200 × 10. A new frame pushes out the oldest |
+| Ball | Start and finish are random and independent. It moves diagonally to the finish column, then vertically, one row per step |
+| Actions | 8 window shifts by one cell, 2 paddle shifts. There is no "stay" action |
+| Reward | ±0.5 for the ball in the window on frames 2 to 9, ±2 for the catch on frame 10, no reward on the first frame. The maximum is 6: 4 for attention and 2 for the catch. The paper states 5 and 7, but in the code the 10 frames give only 8 attention rewards |
+| Network | DQN, 16 outputs, three hidden layers of 200 |
+| Training | Adam 0.001, ε = 0.2 during collection, greedy policy during tests. Buffer of 10,000 transitions |
+| Iteration | 1000 collected transitions (about 111 games, not 100), 100 updates on batches of 100 pairs, then tests of 50 games per condition. 1500 iterations in total |
+| Discount | 0.4 on nonterminal transitions, set in the environment. The agent's γ is not set |
+| Library defaults | Target copied on every update, Huber loss, no gradient clipping, ReLU, n-step = 1. Hidden weights: VarianceScaling (2, fan_in, truncated normal). Output layer: uniform ±0.03, bias −0.2 |
+| Subjects | 5 independent initializations |
 
-Опорные значения – средние по 5 субъектам за последние 100 итераций из сохранённых выводов опубликованных ноутбуков:[^20]
+Reference values are means over 5 subjects for the last 100 iterations, taken from the saved outputs of the published notebooks:[^20]
 
-| Обучение | Проверка | Слежение из 4 | Ловля из 2 |
+| Training | Test | Tracking out of 4 | Catch out of 2 |
 | :-- | :-- | --: | --: |
-| Со схемой | Норма | 3,38 | 0,83 |
-| Со схемой | Окно отключено | 0,15 | −0,42 |
-| Со схемой | Схема отключена | −0,46 | −0,22 |
-| Без схемы | Норма | 0,34 | −0,26 |
-| Без схемы | Окно отключено | −0,49 | −0,43 |
+| With schema | Normal | 3.38 | 0.83 |
+| With schema | Window off | 0.15 | −0.42 |
+| With schema | Schema off | −0.46 | −0.22 |
+| Without schema | Normal | 0.34 | −0.26 |
+| Without schema | Window off | −0.49 | −0.43 |
 
-В статье приведены округлённые значения: около 3,5, 0,8 и 0,4.[^7]
+The paper gives rounded values: about 3.5, 0.8 and 0.4.[^7]
 
-Воспроизведение качественное. Параметры взяты из опубликованного кода авторов.[^20] Версия TF-Agents в нём неизвестна, TensorFlow – 2.1.0, а умолчания сверены с исходниками TF-Agents 0.3.0.
+Reproduction is qualitative. Parameters come from the authors' published code.[^20] The TF-Agents version in it is unknown, TensorFlow is 2.1.0, and the defaults were checked against the TF-Agents 0.3.0 source.
 
-Стенд сознательно отличается от этого кода в одном месте. В коде при сбросе эпизода не пересчитываются клетки окна, поэтому первый кадр показывает окно и схему там, где закончился прошлый эпизод, а начальная колонка не отсечена у кромки. Статья описывает окно на мяче с первого кадра, так же сделано у Piefke et al. Стенд следует статье: награды на первом кадре нет, а эпизоды остаются независимыми. Это отличие заметно ускоряет раннее обучение со схемой, числа приведены в `docs/results.md`. Поэтому опорные значения – качественный ориентир, а не цель для точного совпадения. Реализация сверена с кривыми авторов отдельно, при воспроизведённом поведении их кода.
+The bench deliberately differs from this code in one place. On episode reset the code does not recompute the window cells, so the first frame shows the window and the schema where the previous episode ended, and the starting column is not clipped at the edge. The paper describes the window on the ball from the first frame, and Piefke et al. do the same. The bench follows the paper: the first frame earns no reward, and episodes stay independent. This difference noticeably speeds up early learning with the schema; the numbers are in `docs/results.md`. The reference values are therefore a qualitative guide, not a target for exact agreement. The implementation was checked against the authors' curves separately, with the behavior of their code reproduced.
 
-У этой постановки есть два известных ограничения:
+This setup has two known limitations:
 
-- Авторы сами отмечают, что «полная информация о положении окна внимания присутствует, хотя и неявно, в зрительном массиве».[^7] Любой вывод о пользе схемы должен исключать, что она лишь дублирует кадр.
-- Butlin et al. считают, что такая система обладает лишь частью индикатора AST-1. Она не предсказательна, а прожектор – «простое управляемое свойство входа, а не внутренний процесс с множеством степеней свободы, управляющий потоком информации».[^13]
+- The authors themselves note that "complete information about the location of the attention window is present, though implicit, in the visual array".[^7] Any conclusion about the benefit of a schema must rule out that it merely duplicates the frame.
+- Butlin et al. consider that such a system has only part of indicator AST-1. It is not predictive, and the spotlight is "a simple controllable feature of the input rather than an internal process with multiple degrees of freedom governing information flow".[^13]
 
-Вариант Piefke et al.: PPO, актор из 4 слоёв и критик из 3 слоёв по 1000 нейронов, без буфера памяти, по 3 действия вниз у окна и ресурса, отдельный массив с квадратом, который двигает сам агент.[^8] Разметка наград та же, максимум тоже равен 6. Числа для сверки: при p = 0,5 слежение 3,74 из 4 и ловля 1,73 из 2, со встроенной схемой 3,73 и 1,77, при случайных действиях ресурса 0,93 и −0,03, положение окна читается из ресурса с точностью 61% при случайном угадывании 1,6%.[^8] Важна другая база: при случайных действиях ресурса точность всё равно 40%, поэтому сравнивать надо с ней, а не с угадыванием.[^8] Авторы обучали по одному агенту на уровень шума.
+The Piefke et al. variant: PPO, an actor of 4 layers and a critic of 3 layers with 1000 units each, no memory buffer, 3 downward actions each for the window and the resource, and a separate array with a square that the agent moves itself.[^8] The reward layout is the same, so the maximum is also 6. Numbers for comparison: at p = 0.5, tracking 3.74 out of 4 and catch 1.73 out of 2; with a built-in schema 3.73 and 1.77; with random resource actions 0.93 and −0.03; the window position is read from the resource with 61% accuracy against 1.6% chance.[^8] Another baseline matters: with random resource actions the accuracy is still 40%, so the comparison must be with that, not with chance.[^8] The authors trained one agent per noise level.
 
-В уровне 0 $x_t = I_t \lor (n_t \land \lnot W(a_t))$, где $n_t$ – случайная маска ровно из $100p$ клеток всего поля, а $W(a_t)$ – маска окна.
+At level 0, $x_t = I_t \lor (n_t \land \lnot W(a_t))$, where $n_t$ is a random mask of exactly $100p$ cells of the whole field and $W(a_t)$ is the window mask.
 
-### Целевой режим: что есть в мире
+### Target mode: what is in the world
 
-**Проектное предложение.** Стартовые значения уточняются только на контролях выполнимости:
+**Design proposal.** Starting values are refined only on feasibility controls:
 
-- Поле 16 × 16, каналы яркости и оттенка, эпизод 30 шагов, неподвижный сенсор на всё поле.
-- Целевой объект с непредсказуемой сменой направления. Цель определяется тем, что в начале эпизода внимание автоматически на ней.
-- Один отвлекающий объект, похожий на цель.
-- Частичный окклюдер.
-- Вспышки в случайных местах и моменты, случайной силы.
-- Оттенок цели скачком меняется один раз в случайный момент второй половины эпизода. Задача: в конце сообщить итоговый оттенок и поймать цель платформой.
-- Отдельный тип эпизодов – подсказка и зонд (Э1).
+- A 16 × 16 field, brightness and hue channels, 30-step episodes, a fixed sensor covering the whole field.
+- A target object that changes direction unpredictably. The target is defined by attention being automatically on it at the start of the episode.
+- One distractor object similar to the target.
+- A partial occluder.
+- Flashes at random places and times, with random strength.
+- The target's hue jumps once at a random moment in the second half of the episode. The task: report the final hue at the end and catch the target with the paddle.
+- A separate episode type: cue and probe stimulus (E1).
 
-Смена оттенка нужна затем, чтобы внимание было необходимо в конкретные моменты, а не только в начале.
+The hue change makes attention necessary at specific moments, not only at the start.
 
-Обязательные свойства мира:
+Required properties of the world:
 
-1. **Внимание необходимо.** Без него задача не решается (контроль C0).
-2. **Положение внимания не выводится из одного источника.** Ни из кадра, ни из сводки восприятия, ни из истории команд, ни из телеметрии по отдельности, но выводится из входов схемы вместе (контроль Ф4). Это главное требование постановки. Piefke et al. показали, что от него зависит полезность схемы.[^8]
-3. **Команда не определяет результат.** Задержка, инерция и захват разводят команду и фактический фокус.
-4. **Пути и события случайны.** Иначе агент выучит привычку вместо модели.
+1. **Attention is necessary.** The task cannot be solved without it (control C0).
+2. **The position of attention cannot be inferred from a single source.** Not from the frame, the perceptual summary, the command history or the telemetry alone, but it can be inferred from the schema's inputs together (control F4). This is the central requirement of the setup. Piefke et al. showed that the usefulness of a schema depends on it.[^8]
+3. **The command does not determine the outcome.** Delay, inertia and capture separate the command from the actual focus.
+4. **Paths and events are random.** Otherwise the agent learns a habit instead of a model.
 
-Внимание и взгляд не смешиваются. В MVP взгляда нет. Если он появится позже, `gaze_state` и `attention_state` хранятся и логируются раздельно.
+Attention and gaze are not mixed. The MVP has no gaze. If it appears later, `gaze_state` and `attention_state` are stored and logged separately.
 
-### Реальный механизм внимания
+### The real attention mechanism
 
-В целевом режиме внимание – не окно на изображении, а конкуренция за ограниченный ресурс обработки. Это учитывает замечание Butlin et al.[^13] и описание внимания в статье 2026 года.[^4] Сенсор один и тот же, а доступное обработке измерение зависит от того, как распределён ресурс.
+In the target mode attention is not a window on an image but competition for a limited processing resource. This takes into account the remark by Butlin et al.[^13] and the description of attention in the 2026 article.[^4] The sensor stays the same, while the measurement available to processing depends on how the resource is distributed.
 
-**Почему карта, а не центр фокуса.** У состояния из нескольких чисел нечего упрощать, и схема не была бы карикатурой. Кроме того, общий ресурс делает захват утечкой доли, а не только сдвигом: именно так AST читает результат Tsushima et al.[^15]
+**Why a map rather than a focus center.** A state of a few numbers has nothing to simplify, so the schema would not be a caricature. A shared resource also makes capture a leak of a share and not only a shift, which is how AST reads the result of Tsushima et al.[^15]
 
-**Почему команды относительные.** Абсолютная команда делает знание $a_t$ излишним: можно командовать прямо в оценку цели.
+**Why commands are relative.** An absolute command makes knowledge of $a_t$ unnecessary: the agent could simply command directly at its estimate of the target.
 
-Скрытое состояние механизма – карта приоритета $h_t$ на всём поле. Фактическое состояние внимания – карта ресурса:
+The hidden state of the mechanism is a priority map $h_t$ over the whole field. The actual state of attention is the resource map:
 
 $$
 a_t(r) = \min\Bigl(1,\; R\,\mathrm{softmax}_r\!\bigl(h_t / \tau_t\bigr)\Bigr),
@@ -192,121 +192,121 @@ a_t(r) = \min\Bigl(1,\; R\,\mathrm{softmax}_r\!\bigl(h_t / \tau_t\bigr)\Bigr),
 \tau_t = \frac{\tau_0}{1 + f_t}.
 $$
 
-Измерение:
+Measurement:
 
 $$
 x_t = I_t + \sigma_\eta \bigl(1 - \alpha\, a_t\bigr) \odot \eta_t,
 $$
 
-где $\eta_t \sim \mathcal N(0, I)$, $0 < \alpha \le 1$. Вне фокуса сигнал остаётся, но маскируется шумом.
+where $\eta_t \sim \mathcal N(0, I)$ and $0 < \alpha \le 1$. Outside the focus the signal remains but is masked by noise.
 
-Динамика:
+Dynamics:
 
 $$
 h_{t+1} = \rho\, h_t + \beta_{\mathrm{endo}}\, B(\bar c_t + u_t) + \beta_{\mathrm{exo}}\, S_{t+1} + \epsilon_t.
 $$
 
-Здесь:
+Here:
 
-- $R$ – общий ресурс, стартовое значение соответствует окну 3 × 3.
-- $\bar c_t$ – центр масс карты $a_t$. Агенту он не доступен.
-- $u_t$ – относительная команда смещения, $B$ – гауссов холм вокруг указанной точки.
-- $f_t \ge 0$ – усилие: обостряет конкуренцию и подавляет слабых соперников. **Усилие платное.** Иначе контроллер держал бы его максимальным, и знать о помехах было бы незачем.
-- $S_{t+1}$ – карта заметности: внезапные изменения мира пропорционально их силе. Её вычисляет механизм внимания, контроллер и схема её не получают.
-- $\rho < 1$ – затухание: без поддержки приоритет рассасывается, поэтому удержание требует управления.
-- $\epsilon_t$ – шум механизма.
+- $R$ is the total resource; its starting value corresponds to a 3 × 3 window.
+- $\bar c_t$ is the center of mass of the map $a_t$. It is not available to the agent.
+- $u_t$ is a relative shift command, and $B$ is a Gaussian bump around the given point.
+- $f_t \ge 0$ is effort: it sharpens competition and suppresses weak competitors. **Effort has a cost.** Otherwise the controller would keep it at maximum, and there would be no reason to know about distractors.
+- $S_{t+1}$ is the salience map: sudden changes in the world in proportion to their strength. The attention mechanism computes it; the controller and the schema do not receive it.
+- $\rho < 1$ is decay: without support, priority dissolves, so holding attention requires control.
+- $\epsilon_t$ is the noise of the mechanism.
 
-В начале эпизода приоритет сосредоточен на цели. Динамика задаётся разработчиком и не меняется в течение эксперимента.
+At the start of an episode priority is concentrated on the target. The dynamics are set by the developer and do not change during an experiment.
 
-Что эта запись даёт без отдельных правил:
+What this formulation gives without separate rules:
 
-- **Инерция и задержка.** Новый холм должен перерасти старый, поэтому команда срабатывает не сразу.
-- **Переключение как состояние.** В ходе сдвига ресурс разделён между двумя местами.
-- **Захват и утечка.** Заметное событие забирает долю общего ресурса, даже если центр почти не сдвинулся.
+- **Inertia and delay.** A new bump has to outgrow the old one, so a command does not take effect at once.
+- **Switching as a state.** During a shift the resource is split between two places.
+- **Capture and leak.** A salient event takes a share of the common resource even if the center barely moves.
 
-Оценщик работает со сводками карты: центром, долей ресурса на объекте, энтропией. Доля ресурса на объекте – приближение к «овладению» объектом в смысле Джеймса.[^4]
+The evaluator works with summaries of the map: center, share of resource on an object, entropy. The share of resource on an object approximates "taking possession" of the object in James's sense.[^4]
 
-Запрещённые упрощения: рамка на экране, не влияющая на обработку; фокус, всегда равный команде; абсолютные команды.
+Forbidden simplifications: a frame on the screen that does not affect processing; a focus that always equals the command; absolute commands.
 
-### Что получает агент
+### What the agent receives
 
-- Измерение $x_t$ (только перцептивный модуль, контроллер кадр не читает).
-- Свои команды $u_{t-1}$, $f_{t-1}$, $m_{t-1}$ (эфферентная копия).
-- Телеметрию $p_t$: грубую зашумлённую карту ресурса, $p_t = \mathrm{pool}_k(a_t) + \nu_t$, где $k$ – размер блока. Значения $k$ и $\nu_t$ настраиваются на контроле Ф4. Разрешения должно хватать, чтобы различить смещение зонда в Э1.
-- Своё рекуррентное состояние с предыдущего шага.
-- Награду за внешнюю задачу при обучении.
+- The measurement $x_t$ (perceptual module only; the controller does not read the frame).
+- Its own commands $u_{t-1}$, $f_{t-1}$, $m_{t-1}$ (efference copy).
+- Telemetry $p_t$: a coarse noisy map of the resource, $p_t = \mathrm{pool}_k(a_t) + \nu_t$, where $k$ is the block size. The values of $k$ and $\nu_t$ are tuned on control F4. The resolution must be enough to distinguish the probe offset in E1.
+- Its own recurrent state from the previous step.
+- Reward for the external task during training.
 
-### Чего агент не получает
+### What the agent does not receive
 
-- Чистый кадр $I_t$.
-- Истинные координаты, скорости и идентификаторы объектов.
-- Истинные $a_t$, $h_t$, $\bar c_t$, $S_t$ и признак захвата. Исключения: уровень 0 со встроенной схемой и оракул C6.
-- Разметку «сейчас внимание перехвачено» и подобные подсказки.
-- Награду за совпадение фокуса с целью в целевом режиме.
-- Служебные данные о том, какая идёт фаза сценария.
+- The clean frame $I_t$.
+- True coordinates, velocities and identifiers of objects.
+- The true $a_t$, $h_t$, $\bar c_t$, $S_t$ and any capture flag. Exceptions: level 0 with a built-in schema, and the oracle C6.
+- Labels such as "attention has just been captured" and similar hints.
+- Reward for the focus matching the target in the target mode.
+- Service data about the current phase of a scenario.
 
-Полное состояние мира и внимания доступно **только независимому оценщику**.
+The full state of the world and of attention is available **only to the independent evaluator**.
 
-## Обязательное ядро MVP
+## Required MVP core
 
-Ниже – **проектные требования**, а не перечень доказанных условий сознания.
+The following are **design requirements**, not a list of proven conditions for consciousness.
 
-| ID | Требование | Какое упрощение недопустимо |
+| ID | Requirement | Unacceptable simplification |
 | :-- | :-- | :-- |
-| A1 | Перцептивная модель $z_t$: положение, движение и непрерывный признак объектов, построенные из $x_t$ | Готовые координаты из движка мира |
-| A2 | Реальный механизм внимания: конкуренция за ограниченный ресурс, меняющая доступность информации | Декоративная рамка; состояние из нескольких чисел |
-| A3 | Динамика внимания: эндогенные команды, экзогенный захват, инерция, шум | Фокус всегда равен команде |
-| A4 | Схема внимания $s_t$: компактная, автоматически обновляемая, оценивает и предсказывает состояние внимания | Копия $a_t$ на входе контроллера; запись прошлых координат без предсказаний; обновление по выбору контроллера |
-| A5 | Замкнутое управление: контроллер использует предсказания схемы при выборе команды | Схема, которая ни на что не влияет |
-| A6 | Предсказание функциональных последствий: что станет различимым после команды. Это главная часть схемы[^4] | Предсказание только координат фокуса |
-| A7 | Минимальная модель себя $e_t$: команды, управляемая платформа, ошибка предсказания своих действий | Константа `agent_id` |
-| A8 | Реляционное представление $r_t$: связь себя, внимания и конкретного объекта | Независимая подача $z_t$ и $s_t$ в разные слои |
-| A9 | Невербальный отчёт: выбор ответа по оценке доступности информации | Порог по уверенности первого порядка в обход схемы |
-| A10 | Вмешательства: независимая подмена, заморозка и возмущение $a_t$, $s_t$, $r_t$, $p_t$ и связей | Оценка только по внешнему поведению |
-| A11 | Независимый оценщик с истиной мира и зондами | Веса зондов в рабочем цикле агента |
+| A1 | Perceptual model $z_t$: position, motion and a continuous feature of objects, built from $x_t$ | Ready-made coordinates from the world engine |
+| A2 | Real attention mechanism: competition for a limited resource that changes the availability of information | A decorative frame; a state of a few numbers |
+| A3 | Attention dynamics: endogenous commands, exogenous capture, inertia, noise | The focus always equals the command |
+| A4 | Attention schema $s_t$: compact, updated automatically, estimates and predicts the state of attention | A copy of $a_t$ at the controller's input; a record of past coordinates without predictions; updating at the controller's choice |
+| A5 | Closed-loop control: the controller uses the schema's predictions when choosing a command | A schema that influences nothing |
+| A6 | Prediction of functional consequences: what becomes distinguishable after a command. This is the core of the schema[^4] | Predicting only focus coordinates |
+| A7 | Minimal self-model $e_t$: commands, the controllable paddle, the prediction error of one's own actions | A constant `agent_id` |
+| A8 | Relational representation $r_t$: a link between self, attention and a specific object | Feeding $z_t$ and $s_t$ independently into separate layers |
+| A9 | Nonverbal report: choosing a response by estimated availability of information | A threshold on first-order confidence that bypasses the schema |
+| A10 | Interventions: independent substitution, freezing and perturbation of $a_t$, $s_t$, $r_t$, $p_t$ and of their links | Assessment by external behavior only |
+| A11 | Independent evaluator with the world's truth and with probes | Probe weights in the agent's working loop |
 
-Самое важное сочетание – **A2 + A4 + A5**: реальное внимание, его модель и причинное использование этой модели.
+The most important combination is **A2 + A4 + A5**: real attention, its model, and causal use of that model.
 
-**За пределами первого MVP:** язык, биография, социальная теория разума, схемы решений и эмоций, трансформеры, самосохранение, боль и эмоциональная мотивация.
+**Beyond the first MVP:** language, biography, social theory of mind, decision and emotion schemas, transformers, self-preservation, pain and emotional motivation.
 
-## Как устроить восприятие и схему
+## How to build perception and the schema
 
-### Первый порядок: содержание
+### First order: content
 
-**Проектное решение.** В версии A перцепция задана вручную: это фильтр на ограниченное число слотов объектов, работающий только по $x_t$.
+**Design decision.** In version A perception is hand-written: a filter over a limited number of object slots that works from $x_t$ only.
 
-Почему: вопрос стенда – о модели внимания, а не об обучении представлений. Кроме того, при заданной перцепции точно известно, что $z_t$ не изменилось при подмене схемы. Ценой становится то, что пространство качеств в версии A не проверяется (см. ниже).
+Why: the bench's question concerns the model of attention, not representation learning. With fixed perception it is also certain that $z_t$ did not change when the schema is substituted. The price is that the quality space is not tested in version A (see below).
 
-Запись слота:
+Slot record:
 
-| Поле | Назначение |
+| Field | Purpose |
 | :-- | :-- |
-| `position`, `velocity` | Оценка положения и движения |
-| `hue` | Непрерывный признак |
-| `evidence_support` | Подтверждение текущим входом |
-| `prediction_support` | Подтверждение прогнозом |
-| `uncertainty` | Неопределённость первого порядка |
+| `position`, `velocity` | Estimate of position and motion |
+| `hue` | Continuous feature |
+| `evidence_support` | Support from the current input |
+| `prediction_support` | Support from prediction |
+| `uncertainty` | First-order uncertainty |
 
-Перцепция оценивает локальный шум по самому кадру. **Она не читает $s_t$, $a_t$ и $p_t$.** Контроллер не читает $x_t$ и карту локального шума. Иначе положение внимания становится видимым первому порядку, и это нужно проверять отдельно (C7).
+Perception estimates local noise from the frame itself. **It does not read $s_t$, $a_t$ or $p_t$.** The controller does not read $x_t$ or the local noise map. Otherwise the position of attention becomes visible to the first order, which must be tested separately (C7).
 
-Слоты только объектные, фон не отслеживается: иначе поле `uncertainty` выдавало бы положение ресурса напрямую. Неопределённость объектных слотов всё равно зависит от ресурса. Это законный путь, схема строится и из последствий внимания, но его вклад измеряется отдельно (Ф4). Важнее всего случай, когда ресурс уведён в пустое место вдали от объектов.
+Slots are for objects only and the background is not tracked: otherwise the `uncertainty` field would give away the position of the resource directly. The uncertainty of object slots still depends on the resource. This is a legitimate path, since the schema is also built from the consequences of attention, but its contribution is measured separately (F4). The most important case is when the resource has been pulled to an empty place far from the objects.
 
-Ключевая граница: «в оценке объекта преобладает красный» и «система представляет себя воспринимающей красный объект» – разные вычислительные состояния.[^2]
+The key boundary: "red dominates the estimate of the object" and "the system represents itself as perceiving a red object" are different computational states.[^2]
 
-### Схема внимания
+### Attention schema
 
-Схема – компактный рекуррентный модуль:
+The schema is a compact recurrent module:
 
 $$
 s_t = \mathrm{GRU}_\phi\bigl(s_{t-1},\, [u_{t-1}, p_t, \mathrm{pool}(z_t)]\bigr),
 \qquad s_t \in \mathbb R^{d_s}.
 $$
 
-Схема обновляется на каждом шаге автоматически. Контроллер не выбирает, обновлять её или нет, и не может её отключить.[^4]
+The schema updates on every step automatically. The controller does not choose whether to update it and cannot turn it off.[^4]
 
-Упрощение обеспечивается малой размерностью $d_s$ относительно карты на всём поле: стартовая сетка {4, 8, 16}. Вариационные и дискретные узкие места – расширение.
+Simplification comes from the small dimension $d_s$ relative to the map over the whole field: the starting grid is {4, 8, 16}. Variational and discrete bottlenecks are an extension.
 
-Две предсказательные головы:
+Two predictive heads:
 
 $$
 \hat p_{t+1} = f^{\mathrm{state}}(s_t, u_t),
@@ -314,80 +314,80 @@ $$
 \hat{\mathcal I}_{t+1} = f^{\mathrm{cons}}(s_t, u_t, z_t).
 $$
 
-Первая предсказывает следующий собственный сигнал о внимании. Вторая предсказывает, насколько снизится неопределённость выбранного слота после команды. Вторая голова важнее: по Грациано схема кодирует связи вида «пока мои ресурсы на X, я могу понять X и отреагировать на него; если фокус уйдёт на Y, X будет вытеснен».[^4]
+The first predicts the next own signal about attention. The second predicts how much the uncertainty of the selected slot will fall after a command. The second head matters more: according to Graziano the schema encodes relationships such as "If my resources are focused on X, then I can understand and react to X; but if I let my focus move to Y, then X will be pushed out of my focus".[^4]
 
-Оценщик измеряет, что схема сохраняет от карты $a_t$ и что теряет. Систематические упрощения, например один фокус вместо разделённого ресурса, не считаются дефектом: это и есть предмет изучения.
+The evaluator measures what the schema keeps of the map $a_t$ and what it loses. Systematic simplifications, such as one focus in place of a split resource, are not counted as defects: they are what is being studied.
 
-Состав представляемого – инженерная декомпозиция, а не предписание AST. Эти свойства проверяются зондами, а не задаются полями:
+The list of what is represented is an engineering decomposition, not a prescription of AST. These properties are checked by probes, not set as fields:
 
-| Аспект | Что представляет |
+| Aspect | What it represents |
 | :-- | :-- |
-| Текущее распределение | Где преимущественно выделены ресурсы |
-| Переключение | Идёт ли ещё перемещение |
-| Управляемость | Насколько фокус следует командам |
-| Возмущение | Есть ли признаки непредусмотренного захвата |
-| Последствия | Какая информация будет доступна |
-| Неопределённость | Насколько достоверна сама оценка |
+| Current distribution | Where resources are mainly allocated |
+| Switching | Whether a shift is still in progress |
+| Controllability | How closely the focus follows commands |
+| Perturbation | Whether there are signs of unintended capture |
+| Consequences | What information will be available |
+| Uncertainty | How reliable the estimate itself is |
 
-Варианты схемы нельзя смешивать при описании результата:
+Schema variants must not be mixed when describing a result:
 
-| Вариант | Что предоставляется | Где используется |
+| Variant | What is provided | Where it is used |
 | :-- | :-- | :-- |
-| Встроенная | Безошибочная карта фокуса, как в работе 2021 года | Уровень 0 |
-| Обучаемая описательная | Оценка текущего состояния без предсказаний | Контроль C8 |
-| Обучаемая предсказательная | $s_t$ и обе головы | Версия A |
-| Возникшая | Свободный ресурс без назначенной роли | Версия B |
+| Built-in | An error-free map of the focus, as in the 2021 work | Level 0 |
+| Learned descriptive | An estimate of the current state without predictions | Control C8 |
+| Learned predictive | $s_t$ and both heads | Version A |
+| Emergent | A free resource with no assigned role | Version B |
 
-### Минимальная модель себя и отношение
+### Minimal self-model and the relation
 
-Минимальное «я» – модель причинных границ системы, а не имя и не биография: какие команды исходят от агента, что он может изменить, какие последствия своих действий предсказывает. Вектор $e_t$ накапливает эфферентную копию, положение платформы и ошибку предсказания собственных действий. Это простейшая схема тела[^4], отвечающая индикатору AE-2.[^13]
+The minimal "self" is a model of the system's causal boundaries, not a name or a biography: which commands come from the agent, what it can change, which consequences of its actions it predicts. The vector $e_t$ accumulates the efference copy, the paddle position and the prediction error of one's own actions. This is the simplest body schema[^4], matching indicator AE-2.[^13]
 
-Реляционное представление:
+The relational representation:
 
 $$
 r_t = Q_\psi(e_t, s_t, z_t),
 $$
 
-где $Q_\psi$ в MVP – одноголовое внимание по слотам: запрос из $[e_t \parallel s_t]$ по ключам и значениям из $z_t$. Это минимальный аналог рабочего пространства, где модели себя и сенсорные модели соотносятся и влияют на действия.[^4] Сам по себе он сознания не порождает.
+where $Q_\psi$ in the MVP is single-head attention over slots: a query from $[e_t \parallel s_t]$ over keys and values from $z_t$. This is a minimal analogue of the workspace where self-models and sensory models are interrelated and can affect action.[^4] By itself it does not generate consciousness.
 
-Его предполагаемое значение: «данный агент имеет определённый доступ к этому объекту посредством своего текущего внимания». **Это описание значения для разработчика, а не строка в программе.**
+Its intended meaning: "this agent has a certain access to this object through its current attention". **This describes the meaning for the developer; it is not a string in the program.**
 
-### Обратная связь
+### Feedback
 
-Схема должна управлять как минимум:
+The schema must control at least:
 
-1. **Выбором следующей команды:** контроллер получает предсказания для набора кандидатных команд.
-2. **Удержанием и подавлением:** платным усилием $f_t$ при ожидаемой потере цели или утечке ресурса.
-3. **Выбором ответа:** ответить, досмотреть или отказаться.
-4. **Коррекцией:** расхождение предсказаний с наблюдаемым запускает либо исправление внимания, либо обновление модели.[^4]
+1. **The choice of the next command:** the controller receives predictions for a set of candidate commands.
+2. **Holding and suppression:** the costly effort $f_t$ when loss of the target or a resource leak is expected.
+3. **The choice of response:** answer, keep looking, or abstain.
+4. **Correction:** a mismatch between predictions and observations triggers either a correction of attention or an update of the model.[^4]
 
-Управление читает схему напрямую и постоянно. Отчёт получает её только через отношение $r_t$. Это соответствует различию между непрерывной работой схемы и лишь частичным доступом к ней.[^4]
+Control reads the schema directly and continuously. Report receives it only through the relation $r_t$. This matches the distinction between the schema's continuous work and the only partial access to it.[^4]
 
-Ключевое требование:
+The key requirement:
 
-> Модель внимания нужна потому, что без неё система хуже управляет собственной обработкой, а не потому, что разработчику нужен отчёт о ней.
+> The model of attention is needed because without it the system controls its own processing worse, not because the developer wants a report about it.
 
-Это инженерная гипотеза, которую необходимо проверить вмешательствами.
+This is an engineering hypothesis that must be tested with interventions.
 
-### Временная организация
+### Timing
 
-Порядок вычислений на шаге исключает заглядывание в будущее:
+The order of computation in a step rules out looking into the future:
 
-1. Мир переходит в $I_t$.
-2. Механизм внимания вычисляет $a_t$ по команде $t-1$, захвату и шуму.
-3. Формируются $x_t$ и $p_t$.
-4. Перцепция обновляет $z_t$.
-5. Обновляется $e_t$ и $s_t$.
-6. Вычисляется $r_t$.
-7. Для кандидатных команд считаются $\hat p_{t+1}$ и $\hat{\mathcal I}_{t+1}$.
-8. Контроллер выбирает $u_t$, $f_t$, $m_t$ и действие отчёта.
-9. На следующем шаге предсказания сверяются с наблюдаемым.
+1. The world moves to $I_t$.
+2. The attention mechanism computes $a_t$ from the command at $t-1$, capture and noise.
+3. $x_t$ and $p_t$ are formed.
+4. Perception updates $z_t$.
+5. $e_t$ and $s_t$ are updated.
+6. $r_t$ is computed.
+7. $\hat p_{t+1}$ and $\hat{\mathcal I}_{t+1}$ are computed for candidate commands.
+8. The controller chooses $u_t$, $f_t$, $m_t$ and the report action.
+9. On the next step predictions are compared with observations.
 
-Бесконечная «модель модели» не нужна: достаточно модели мира и модели внимания, участвующей в управлении.
+An endless "model of a model" is not needed: a model of the world and a model of attention that takes part in control are enough.
 
-## Обучение
+## Training
 
-Ниже – **предлагаемые функции обучения, а не формулы Грациано**.
+The following are **proposed training functions, not Graziano's formulas**.
 
 $$
 L = L_{\mathrm{task}} + \lambda_a L_{\mathrm{attention}} + \lambda_c L_{\mathrm{consequence}},
@@ -399,420 +399,420 @@ L_{\mathrm{attention}} = \lVert \hat p_{t+1} - \mathrm{sg}(p_{t+1}) \rVert^2,
 L_{\mathrm{consequence}} = \lVert \hat{\mathcal I}_{t+1} - \mathrm{sg}(\Delta H_{t+1}) \rVert^2.
 $$
 
-Здесь:
+Here:
 
-- $L_{\mathrm{task}}$ – потери обучения с подкреплением: PPO с рекуррентным контроллером и усечённым обратным распространением. Награда включает цену усилия.
-- $\Delta H_{t+1}$ – изменение собственной неопределённости выбранного слота.
-- $\mathrm{sg}$ – остановка градиента.
+- $L_{\mathrm{task}}$ is the reinforcement learning loss: PPO with a recurrent controller and truncated backpropagation. The reward includes the cost of effort.
+- $\Delta H_{t+1}$ is the change in the agent's own uncertainty about the selected slot.
+- $\mathrm{sg}$ is the stop-gradient operator.
 
-**Цель обучения – собственный сигнал агента, а не истина.** Истинное $a_{t+1}$ как цель используется только в варианте «обучение по инструментам», который служит положительным контролем и описывается отдельно.
+**The training target is the agent's own signal, not the truth.** The true $a_{t+1}$ is used as a target only in the "instrumented training" variant, which serves as a positive control and is described separately.
 
-Различие этих вариантов не стоит преувеличивать. Шум телеметрии с нулевым средним при обучении усредняется, и первая голова стремится к $\mathrm{pool}_k(a_{t+1})$. Собственный сигнал отличается от истины разрешением и числом нужных примеров. Предел чувствительности схемы задаётся другим: шумом на её входе во время работы.
+The difference between these variants should not be overstated. Zero-mean telemetry noise averages out in training, and the first head converges to $\mathrm{pool}_k(a_{t+1})$. The own signal differs from the truth in resolution and in the number of examples needed. The schema's sensitivity limit is set by something else: the noise at its input during operation.
 
-Обязательные ограничения:
+Required constraints:
 
-- Схема не получает положение цели под видом внутреннего сигнала.
-- Предсказание не копирует уже вычисленное будущее внимание.
-- Внимание не становится неподвижным ради лёгкости предсказания. Зонды следят за долей шагов с движением фокуса.
-- Контроллер не обходит внимание через чистый кадр.
-- Предсказуемость не покупается провалом основной задачи.
-- Нет награды за внутренние состояния и за «осознанность».
-- Константы, заданные вручную, не содержат знания, которое должно выучиться.
+- The schema does not receive the target's position disguised as an internal signal.
+- A prediction does not copy already computed future attention.
+- Attention does not become static to make prediction easier. Probes watch the share of steps with focus movement.
+- The controller does not bypass attention through the clean frame.
+- Predictability is not bought by failing the main task.
+- There is no reward for internal states or for "awareness".
+- Hand-set constants do not contain knowledge that should be learned.
 
-**Низкая ошибка предсказания сама по себе не является успехом.**
+**A low prediction error is not a success in itself.**
 
-Цена запрета шаговой награды известна: без неё задача учится намного дольше.[^8] Если оракул C6 не учится в бюджете, это провал выполнимости. Возвращать награду за внимание в сравниваемые условия нельзя, вместо этого меняется постановка.
+The price of banning step rewards is known: without them the task takes much longer to learn.[^8] If the oracle C6 does not learn within the budget, that is a feasibility failure. Reward for attention must not be returned to the compared conditions; the setup is changed instead.
 
-## Индикаторы организации опыта (не тест квалиа)
+## Indicators of the organization of experience (not a test of qualia)
 
-Вопрос «есть ли внутри картинка?» заменяется более точным: представляет ли система собственное отношение к содержанию и зависит ли от этого организация её обработки? **Даже положительный ответ не является тестом квалиа.**[^13]
+The question "is there a picture inside?" is replaced by a more precise one: does the system represent its own relation to the content, and does the organization of its processing depend on this? **Even a positive answer is not a test of qualia.**[^13]
 
-### Пять раздельных измерений
+### Five separate measurements
 
-Оценщик измеряет независимо:
+The evaluator measures independently:
 
-| Уровень | Обозначение | Как измеряется | Что значит расхождение |
+| Level | Notation | How it is measured | What a mismatch means |
 | :-- | :-- | :-- | :-- |
-| Объективная обработка | $z_t \to y_t$ | Зонд истинного признака из $z_t$ | Информация есть, но может не быть зарегистрирована схемой |
-| Фактическое внимание | $a_t$ | Истина механизма | Внимание притянуто, но не отражено схемой |
-| Представленное внимание | $\hat a_t(s_t)$ | Зонд сводок карты из $s_t$ | $\hat a_t \ne a_t$: диссоциация внимания и осведомлённости |
-| Оценка доступности | $\hat{\mathcal I}$ | Выход головы последствий | Различие «смотрю не туда» и «смотрю туда, но контраст низок» |
-| Самоатрибуция | $r_t$ | Зонд связки агент – объект и её влияние на отчёт | Карты мира и внимания есть, связи нет |
+| Objective processing | $z_t \to y_t$ | A probe of the true feature from $z_t$ | The information exists but may not be registered by the schema |
+| Actual attention | $a_t$ | The mechanism's truth | Attention is drawn but not reflected in the schema |
+| Represented attention | $\hat a_t(s_t)$ | A probe of map summaries from $s_t$ | $\hat a_t \ne a_t$: a dissociation of attention and awareness |
+| Estimated availability | $\hat{\mathcal I}$ | Output of the consequence head | The difference between "looking elsewhere" and "looking there, but the contrast is low" |
+| Self-attribution | $r_t$ | A probe of the agent-object link and of its effect on report | Maps of the world and of attention exist, but no link between them |
 
-Скаляр уверенности классификатора не считается схемой внимания.
+A classifier's confidence scalar does not count as an attention schema.
 
-Каждый зонд сравнивается с необученной системой, с сырым входом и с базой «только контекст»: номер шага, фаза эпизода. В уровне 0 окно всегда идёт вниз вместе с мячом, поэтому строка выводится из времени. Зонд внимания там считается только по колонке, как у Piefke et al.[^8]
+Each probe is compared with an untrained system, with the raw input, and with a "context only" baseline: step number, episode phase. At level 0 the window always moves down with the ball, so the row follows from time. The attention probe there is computed by column only, as in Piefke et al.[^8]
 
-### Невербальный отчёт
+### Nonverbal report
 
-В конце эпизода, или раньше по выбору агента, доступны четыре действия:
+At the end of an episode, or earlier at the agent's choice, four actions are available:
 
-| Действие | Смысл | Цена |
+| Action | Meaning | Cost |
 | :-- | :-- | :-- |
-| `COMMIT_HIGH` | Ответить, большая ставка | Высокие награда и штраф |
-| `COMMIT_LOW` | Ответить, малая ставка | Малые награда и штраф |
-| `SENSE_MORE` | Ещё шаг наблюдения с командой внимания | Малая цена за шаг |
-| `ABSTAIN` | Отказаться | Нулевой исход |
+| `COMMIT_HIGH` | Answer with a high stake | High reward and penalty |
+| `COMMIT_LOW` | Answer with a low stake | Low reward and penalty |
+| `SENSE_MORE` | One more step of observation with an attention command | A small cost per step |
+| `ABSTAIN` | Decline | Zero outcome |
 
-Выбор читает и сводку $z_t$, и $r_t$. Опирается ли он на схему – измеряемый результат, а не проводка. Значения ставок подбираются на контролях так, чтобы ни одно действие не доминировало, и замораживаются.
+The choice reads both the summary of $z_t$ and $r_t$. Whether it relies on the schema is a measured result, not wiring. The stakes are tuned on controls so that no action dominates, and then frozen.
 
-Сам по себе выбор «посмотреть ещё» показывает только стратегию управления неопределённостью. Для интерпретации в духе AST нужно показать связь именно с моделью внимания.
+Choosing to "look again" shows by itself only a strategy for handling uncertainty. An interpretation in the spirit of AST requires a link to the model of attention specifically.
 
-### Что считать пространством качеств
+### What counts as a quality space
 
-Индикатор HOT-4 в версии A **не проверяется**: пространство оттенков задано вручную. Проверка становится осмысленной только при обучаемой перцепции: внутреннее сходство оттенков должно быть связано с различением, памятью и поведением. Вектор цвета не становится переживанием красного только потому, что его назвали `quale`.
+Indicator HOT-4 is **not tested** in version A: the hue space is set by hand. The test becomes meaningful only with learned perception: internal similarity of hues must relate to discrimination, memory and behavior. A color vector does not become an experience of red merely because it is named `quale`.
 
-### Что не считать свидетельством
+### What does not count as evidence
 
-- Текст «я вижу красное».
-- Красивую визуализацию фокуса и его оценки.
-- Низкую ошибку предсказания собственного сигнала.
-- То, что $a_t$ читается зондом из состояния. Определение Piefke et al. здесь слабое: схемой там считается любое хранилище с информацией о внимании.[^8] При детерминированном механизме этому определению удовлетворяет обычная история команд.
-- Падение результатов при обнулении схемы: нуль может быть недостижимым для сети состоянием.
-- Падение среднего результата без изменения профиля управления: теория предсказывает не его.[^14][^15]
-- Привычку смотреть на одну сторону поля вместо связи с подсказкой.[^15]
-- Сдвиг ставки, если отчёт по проводке читает только схему.
-- Отдельное выигранное сравнение без контролей.
+- The text "I see red".
+- A beautiful visualization of the focus and of its estimate.
+- A low prediction error on the agent's own signal.
+- The fact that a probe can read $a_t$ from a state. The definition in Piefke et al. is weak here: any store with information about attention counts as a schema.[^8] With a deterministic mechanism a plain command history satisfies this definition.
+- A drop in results when the schema is zeroed: zero may be a state the network never reaches.
+- A drop in the mean result without a change in the control profile: this is not what the theory predicts.[^14][^15]
+- A habit of looking at one side of the field instead of a link to the cue.[^15]
+- A shift in the wager if the report reads only the schema by wiring.
+- A single won comparison without controls.
 
-## Три уровня эксперимента
+## Three levels of the experiment
 
-**Уровень 0 – репликация.** Воспроизведение Wilterson & Graziano и Piefke et al. Цель – убедиться, что среда и обучение верны, и получить опорные числа.
+**Level 0: replication.** Reproduction of Wilterson & Graziano and of Piefke et al. The goal is to make sure that the environment and training are correct and to obtain reference numbers.
 
-**Версия A – функциональный стенд.** Механизм внимания, перцепция и разделение модулей заданы явно, схема и управление обучаются. Проверяет гипотезы 1–4.
+**Version A: functional bench.** The attention mechanism, perception and the division into modules are set explicitly; the schema and control are learned. It tests hypotheses 1 to 4.
 
-**Версия B – возникновение.** Схема не назначена: агент получает свободный ресурс, а наличие модели внимания определяется зондами и вмешательствами. Проверяет гипотезу 5. Первый этап повторяет постановку Piefke et al. с управляемым квадратом на другом алгоритме. Следующий этап – неструктурированный рекуррентный ресурс, на который указывают сами авторы.[^8] Он ближе к AST: квадрат агент двигает сам выбором действий, а схема по Грациано строится автоматически, вне выбора.[^4]
+**Version B: emergence.** No schema is assigned: the agent gets a free resource, and the presence of a model of attention is determined by probes and interventions. It tests hypothesis 5. The first stage repeats the Piefke et al. setup with a controllable square on a different algorithm. The next stage is an unstructured recurrent resource, which the authors themselves point to.[^8] It is closer to AST: the agent moves the square itself by choosing actions, whereas Graziano's schema is built automatically, outside choice.[^4]
 
-Нельзя объявлять версию A проверкой возникновения. Наличие самоорганизации не заменяет ни одного функционального эксперимента.
+Version A must not be presented as a test of emergence. Self-organization does not replace any functional experiment.
 
-## Контроли и протокол
+## Controls and protocol
 
-### Контроли выполнимости
+### Feasibility controls
 
-**Сначала выполнимость, потом сравнение.** Задача настраивается только на этих контролях, на отдельных зёрнах. Сравниваемые условия при этом не запускаются.
+**Feasibility first, comparison second.** The task is tuned only on these controls, on separate seeds. The compared conditions are not run during this.
 
-| Контроль | Устройство | Условие готовности |
+| Control | Design | Readiness condition |
 | :-- | :-- | :-- |
-| C0: без внимания | Шум равномерный, усиления нет | Задача не решается. Если решается, шума мало |
-| Ф2: идеальная политика | Ручная политика по истине мира и внимания | Решает задачу: задача разрешима при этом шуме и бюджете |
-| C6: оракул внимания | Тот же контроллер, но на входе истинное $a_t$ | Учится при всех шагах обучения из сетки, включая шаги участников |
-| Ф4: разделение источников | Зонды сводок $a_t$ при нейтральной политике из истории кадров, из $\mathrm{pool}(z_t)$, из истории команд, из телеметрии и из всех входов схемы вместе | Ни один источник отдельно не даёт сводок $a_t$, входы схемы вместе дают |
-| Ф5: неподвижная точка | Собственный сигнал обучения при истинном состоянии и при нейтральном внимании | В среднем не уводит от правды |
-| Ф6: подсчёт событий | Число захватов и их длина, фактические сдвиги фокуса, выходы цели из фокуса | События нужного вида действительно есть |
+| C0: no attention | Uniform noise, no enhancement | The task is not solved. If it is, there is too little noise |
+| F2: ideal policy | A hand-written policy using the truth of the world and of attention | It solves the task: the task is solvable at this noise and budget |
+| C6: attention oracle | The same controller with the true $a_t$ as input | It learns at all learning rates in the grid, including those of the participants |
+| F4: separation of sources | Probes of summaries of $a_t$ under a neutral policy from the frame history, from $\mathrm{pool}(z_t)$, from the command history, from telemetry, and from all schema inputs together | No single source gives summaries of $a_t$, and the schema inputs together do |
+| F5: fixed point | The agent's own training signal at the true state and with neutral attention | On average it does not lead away from the truth |
+| F6: event count | Number and length of captures, actual focus shifts, target exits from the focus | Events of the required kind actually occur |
 
-Контроль Ф4 дешёв: он обучается с учителем на случайной политике и выполняется до всякого обучения с подкреплением. Если он не проходит, остальное не имеет смысла.
+Control F4 is cheap: it is trained with supervision on a random policy and runs before any reinforcement learning. If it fails, nothing else makes sense.
 
-### Сравниваемые условия
+### Compared conditions
 
-| Условие | Устройство | Что исключает |
+| Condition | Design | What it rules out |
 | :-- | :-- | :-- |
-| Полный контур | Схема с обеими головами и связью с контроллером | – |
-| C1: память команд | История команд без схемы и вспомогательных целей | Достаточно помнить, что приказано |
-| C2: равный ресурс | Рекуррентный блок того же размера, только $L_{\mathrm{task}}$ | Число параметров и память |
-| C3: задача о мире | Вспомогательный прогноз положения цели вместо модели внимания | Помогает любая вспомогательная цель |
-| C4: без рекуррентности | Та же схема без $s_{t-1}$ (аналог H3[^9]) | Нужна ли динамическая модель |
-| C5: только отчёт | Схема учится и читается оценщиком, но в контроллер не идёт | Эпифеноменальный монитор |
-| C7: оценка по стимулу | Вход контроллера дополнен ручной оценкой фокуса из кадра | Сильный первый порядок: схема лишь дублирует кадр |
-| C8: описательная схема | Оценка текущего состояния без предсказаний | Нужно ли предсказание |
-| C9: уверенность | Отчёт только по неопределённости $z_t$ | Сводится ли отчёт к первому порядку |
+| Full loop | Schema with both heads and a link to the controller | – |
+| C1: command memory | Command history without a schema or auxiliary goals | It is enough to remember what was ordered |
+| C2: equal resources | A recurrent block of the same size, $L_{\mathrm{task}}$ only | Parameter count and memory |
+| C3: world task | An auxiliary prediction of the target's position instead of a model of attention | Any auxiliary goal helps |
+| C4: no recurrence | The same schema without $s_{t-1}$ (analogue of H3[^9]) | Whether a dynamic model is needed |
+| C5: report only | The schema learns and is read by the evaluator but does not reach the controller | An epiphenomenal monitor |
+| C7: estimate from the stimulus | Controller input extended with a hand-written estimate of the focus from the frame | A strong first order: the schema merely duplicates the frame |
+| C8: descriptive schema | An estimate of the current state without predictions | Whether prediction is needed |
+| C9: confidence | Report from the uncertainty of $z_t$ only | Whether report reduces to the first order |
 
-Сопоставляются вычислительный бюджет, сигналы и история, а не только число параметров. Остальные гипотезы Liu et al. определены для внимания типа key-value, их перенос на карту ресурса не определён, поэтому в контролях они не используются.[^9]
+What is matched is the computational budget, signals and history, not only the parameter count. The other hypotheses of Liu et al. are defined for key-value attention; their transfer to a resource map is not defined, so they are not used as controls.[^9]
 
-### Как читать результат
+### How to read the result
 
-C2 может построить неявную модель внимания. Для AST это не опровержение, а подтверждение: хороший регулятор моделирует объект. Поэтому равенство результатов читается только вместе с зондом:
+C2 may build an implicit model of attention. For AST this is not a refutation but a confirmation: a good regulator models its object. Equal results are therefore read only together with a probe:
 
-| Полный контур против C2 | $a_t$ читается из состояния C2 | Вердикт |
+| Full loop against C2 | $a_t$ readable from the state of C2 | Verdict |
 | :-- | :-- | :-- |
-| Лучше | Нет | Явная схема полезна, гипотеза регулятора поддержана |
-| Лучше | Да | Явная схема полезна, C2 частично построил неявную модель |
-| Равны | Да | Регулятор поддержан, пользы отдельного модуля нет. Совместимо с AST |
-| Равны | Нет | Управление без модели внимания. Аргумент против гипотезы в данной постановке |
+| Better | No | The explicit schema is useful, the regulator hypothesis is supported |
+| Better | Yes | The explicit schema is useful, C2 partly built an implicit model |
+| Equal | Yes | The regulator is supported, a separate module brings no benefit. Compatible with AST |
+| Equal | No | Control without a model of attention. An argument against the hypothesis in this setup |
 
-Зонд считается читаемым только при превосходстве над базами из раздела об измерениях.
+A probe counts as readable only if it beats the baselines from the section on measurements.
 
-Проверка замещения C7 применяется, только если есть преимущество над C2. Иначе её результат – «не применимо», а не «исключено».
+The substitution check C7 applies only if there is an advantage over C2. Otherwise its result is "not applicable", not "ruled out".
 
-Если признаки схемы вычисляются вручную из состояния первого порядка, у любой политики, которая их читает, найдётся эквивалент первого порядка. Поэтому схема обучается начиная с версии A.
+If schema features are computed by hand from the first-order state, any policy that reads them has a first-order equivalent. The schema is therefore learned from version A onward.
 
-### Протокол сравнения
+### Comparison protocol
 
-Правила перенесены из стенда `coherence-lab`, где их нарушение несколько раз давало ложные выводы:
+These rules come from the `coherence-lab` bench, where breaking them produced false conclusions several times:
 
-1. Проектирование только на контролях, на отдельных зёрнах.
-2. Заморозка постановки.
-3. Один подбор шагов обучения и весов $\lambda$ на контроле C2, а не на полном контуре.
-4. Одно сравнение на новых зёрнах. Израсходованные зёрна не используются повторно.
+1. Design only on controls, on separate seeds.
+2. Freeze the setup.
+3. One tuning of learning rates and weights $\lambda$ on control C2, not on the full loop.
+4. One comparison on new seeds. Spent seeds are not reused.
 
-Единица наблюдения – независимое обучение. Шаги и эпизоды одного обучения независимыми испытаниями не считаются. Сравнение парное: 30 пар, не меньше 15, если не хватает бюджета. Оценка – 95% бутстреп-интервал разности. Порог эффекта и число пар фиксируются при заморозке.
+The unit of observation is an independent training run. Steps and episodes of one run do not count as independent trials. The comparison is paired: 30 pairs, or at least 15 if the budget falls short. The estimate is a 95% bootstrap interval of the difference. The effect threshold and the number of pairs are fixed at the freeze.
 
-Для каждой метрики заранее ищется дешёвый обходной путь и проверяется на условиях, где он не работает. Метрика должна мерить формирование модели напрямую: итоговая задача может выйти на потолок раньше.
+For each metric a cheap bypass is sought in advance and tested under conditions where it does not work. A metric must measure model formation directly: the final task can saturate earlier.
 
-## Главные причинные эксперименты
+## Main causal experiments
 
-Для каждого механизма требуется сравнение с подходящим контролем. Каждое условие отличается реальным механизмом, а не подписью в интерфейсе. «Ожидание» здесь – предсказание теории, а не требование к результату.
+Each mechanism requires comparison with a suitable control. Each condition differs by a real mechanism, not by a label in the interface. "Expectation" here is a prediction of the theory, not a requirement on the result.
 
-### Э1. Абляция схемы
+### E1. Schema ablation
 
-Сравнить:
+Compare:
 
-- полный контур;
-- после обучения: случайная подмена состояния схемы реальным состоянием другого эпизода, подстановка среднего, обнуление;
-- обучение без схемы с самого начала;
-- альтернативный контроллер с равными ресурсами (C2).
+- the full loop;
+- after training: random substitution of the schema state with a real state from another episode, substitution of the mean, zeroing;
+- training without a schema from the start;
+- an alternative controller with equal resources (C2).
 
-Случайная подмена – основной вариант: она остаётся в области достижимых состояний.[^8] Обнуление записывается отдельно и может завышать эффект: у Piefke et al. удаление ресурса давало по слежению −0,82, а случайные действия ресурса 0,93.[^8] Первое проверяет приобретённую зависимость, обучение с нуля – пользу при обучении, C2 – специфичность механизма.
+Random substitution is the main variant: it stays within reachable states.[^8] Zeroing is recorded separately and can exaggerate the effect: in Piefke et al. removing the resource gave −0.82 on tracking, and random resource actions gave 0.93.[^8] The first tests acquired dependence, training from scratch tests the benefit during learning, and C2 tests the specificity of the mechanism.
 
-Меры следуют предсказаниям теории управления[^14] и эффекту упреждения[^15]:
+The measures follow the control-theory predictions[^14] and the anticipation effect[^15]:
 
-| Мера | Как считается | Ожидание без схемы |
+| Measure | How it is computed | Expectation without a schema |
 | :-- | :-- | :-- |
-| Экзогенный эффект | Доля ресурса, ушедшая к вспышке на первом шаге | Сохраняется |
-| Средняя сила внимания | Средняя доля ресурса на цели | Может не падать |
-| Устойчивость | Колебания доли ресурса на цели во времени | Колебания растут |
-| Уход из ненужного состояния | Время ухода ресурса от нерелевантной вспышки и провал ниже базы (аналог торможения возврата) | Уход хуже, провала нет |
-| Чувствительность к возмущению | Наклон зависимости захвата от силы события | Наклон круче |
-| Упреждение | Парадигма ниже | Почти исчезает |
+| Exogenous effect | Share of resource drawn to a flash on the first step | Preserved |
+| Mean strength of attention | Mean share of resource on the target | May not fall |
+| Stability | Fluctuation of the share of resource on the target over time | Fluctuations grow |
+| Leaving an undesired state | Time for the resource to leave an irrelevant flash, and the dip below baseline (analogue of inhibition of return) | Slower departure, no dip |
+| Sensitivity to perturbation | Slope of capture against event strength | Steeper slope |
+| Anticipation | The paradigm below | Almost disappears |
 
-Вспышка в мере ухода полностью нерелевантна: отчёт и награда её не касаются. У людей провал ниже базы появлялся, только когда стимул был не нужен для ответа. Если он нужен, внимание удерживается на нём, и провала нет.[^14]
+The flash in the departure measure is fully irrelevant: neither report nor reward concerns it. In humans the dip below baseline appeared only when the stimulus was not needed for the response. If it is needed, attention stays on it and there is no dip.[^14]
 
-**Парадигма упреждения по Wilterson et al.**[^15] Подсказка появляется в случайном месте из многих и притягивает внимание. Через несколько шагов рядом с ней коротко появляется зондовый стимул, чей оттенок нужно сообщить. В 70% случаев он смещён от подсказки в одну постоянную сторону, в остальных – в противоположную или совпадает с местом подсказки. Экзогенный эффект – преимущество места подсказки. Эндогенный – преимущество предсказанного смещения над противоположным.
+**The anticipation paradigm of Wilterson et al.**[^15] A cue appears at one of many random places and draws attention. A few steps later a brief probe stimulus appears next to it, and its hue must be reported. In 70% of cases it is offset from the cue to one constant side; in the others it is on the opposite side or at the cue's location. The exogenous effect is the advantage of the cue's location. The endogenous effect is the advantage of the predicted offset over the opposite one.
 
-Этот тест подходит стенду особенно точно. Контроллер должен сместить ресурс относительно места, куда его увело, значит, должен знать это место. По логике авторов без осознания подсказки ломается описательная часть модели, а не предсказательная.[^15]
+This test fits the bench especially well. The controller has to shift the resource relative to the place it was pulled to, so it must know that place. By the authors' logic, without awareness of the cue it is the descriptive part of the model that fails, not the predictive part.[^15]
 
-Обходной путь – привычка смотреть на одну сторону поля. Поэтому мест подсказки много, а мера считается относительно подсказки, а не поля. Кроме итога записывается кривая обучения: у людей без осознания подсказки есть намёк на очень медленное обучение, и авторы осторожно предполагают два механизма, быстрый на модели и медленный без неё.[^15] Поэтому C2 сравнивается с полным контуром по всей кривой, а не только по итогу: на длинной дистанции он может догнать.
+The bypass is a habit of looking at one side of the field. Therefore there are many cue locations, and the measure is computed relative to the cue, not to the field. Besides the final value, the learning curve is recorded: in humans without awareness of the cue there is a hint of very slow learning, and the authors cautiously suggest two mechanisms, a fast model-based one and a slow model-free one.[^15] So C2 is compared with the full loop over the whole curve, not only at the end: it may catch up in the long run.
 
-**Ожидание по AST:** захват и средняя сила сохраняются, управление ухудшается.[^3][^14][^15] Человеческие данные получены для неосознанного стимула, а не для удаления схемы целиком, поэтому совпадение профиля – аналогия. Авторы сами подчёркивают, что подобные совпадения теорию не доказывают.[^14][^15]
+**Expectation under AST:** capture and mean strength are preserved, control gets worse.[^3][^14][^15] The human data come from an unnoticed stimulus, not from removal of the whole schema, so a matching profile is an analogy. The authors themselves stress that such matches do not prove the theory.[^14][^15]
 
-### Э2. Двойная диссоциация
+### E2. Double dissociation
 
-**2А. Ложная схема при сохранном внимании.** Внимание на цели. В шаге $t_0$ состояние схемы подменяется записанным состоянием из реального эпизода, где фокус был в другой стороне. Кадр, $z_t$ и $a_t$ не меняются.
+**2A. False schema with attention intact.** Attention is on the target. At step $t_0$ the schema state is replaced by a recorded state from a real episode in which the focus was on the other side. The frame, $z_t$ and $a_t$ do not change.
 
-Измерить немедленно, на том же шаге: направление следующей команды и выбор отчёта.
+Measure immediately, on the same step: the direction of the next command and the choice of report.
 
-**Ожидание:** команда смещается в сторону, компенсирующую ложную ошибку, и уводит реальный фокус с цели. Ставка падает, хотя $z_t$ тот же. Это проверка гипотезы 4: один источник ошибки – оба эффекта.[^1]
+**Expectation:** the command shifts in the direction that compensates for the false error and pulls the real focus off the target. The wager falls although $z_t$ is the same. This tests hypothesis 4: one source of error, both effects.[^1]
 
-Эффект должен быть направленным: знак сдвига зависит от стороны подмены. Общее ухудшение не считается. После новой команды наблюдения закономерно расходятся, поэтому немедленные и отложенные эффекты анализируются раздельно.
+The effect must be directional: the sign of the shift depends on the side of the substitution. General degradation does not count. After a new command the observations naturally diverge, so immediate and delayed effects are analyzed separately.
 
-**2Б. Скрытое возмущение внимания.** Ресурс сдвигается импульсом, телеметрия блокируется на шаг, схема не меняется.
+**2B. Hidden perturbation of attention.** The resource is shifted by an impulse, telemetry is blocked for one step, and the schema does not change.
 
-Измерить: обнаруживается ли расхождение, что происходит дальше – исправляется управление или обновляется модель[^4], сколько шагов нужно. Это отделяет мониторинг от запоминания команд. **Ожидание:** C1 продолжает считать, что фокус там, куда его направили, а схема обнаруживает расхождение по телеметрии и последствиям.
+Measure: whether the mismatch is detected, what happens next (control is corrected or the model is updated[^4]), and how many steps it takes. This separates monitoring from remembering commands. **Expectation:** C1 keeps assuming the focus is where it was sent, while the schema detects the mismatch through telemetry and consequences.
 
-### Э3. Разрыв обратной связи
+### E3. Broken feedback
 
-Сравнение полного контура с C5. Предсказание внимания хорошее, но использовать его при выборе нельзя.
+A comparison of the full loop with C5. The prediction of attention is good, but it cannot be used for choice.
 
-**Проверяемая гипотеза:** описывать внимание и управлять им с помощью модели – разные функции. Если разрыв ничего не меняет, схема – побочное диагностическое представление.
+**Testable hypothesis:** describing attention and controlling it with a model are different functions. If breaking the link changes nothing, the schema is a diagnostic by-product.
 
-### Э4. Виртуальный неглект
+### E4. Virtual neglect
 
-Аналог поражения правого TPJ: при сохранной обработке пропадают осознание и эндогенное управление для одной стороны пространства, а часть экзогенного внимания сохраняется.[^1] Правый TPJ связан именно с управлением вниманием по осознаваемой подсказке.[^16]
+An analogue of damage to the right TPJ: with processing intact, awareness and endogenous control are lost for one side of space, while some exogenous attention remains.[^1] The right TPJ is related specifically to control of attention by an aware cue.[^16]
 
-Вмешательство: когда зонд показывает, что схема представляет фокус в левой половине, её состояние подменяется ближайшим записанным состоянием с фокусом справа. Перцепция и механизм внимания не трогаются. Зонд здесь – инструмент экспериментатора, он не входит в рабочий цикл агента и не обучает его.
+Intervention: when a probe shows that the schema represents the focus in the left half, its state is replaced by the nearest recorded state with the focus on the right. Perception and the attention mechanism are not touched. The probe here is the experimenter's tool: it is not part of the agent's working loop and does not train it.
 
-**Ожидание:** вспышка слева по-прежнему смещает фокус, признак цели слева читается из $z_t$, но эндогенного поиска влево нет, а отчёты по левым стимулам сдвигаются к отказу.
+**Expectation:** a flash on the left still shifts the focus, the target's feature on the left is readable from $z_t$, but there is no endogenous search to the left, and reports on left stimuli shift toward abstaining.
 
-### Э5. Дистрактор ниже порога регистрации
+### E5. Distractor below the registration threshold
 
-Что показали Tsushima et al.[^17]: при центральной задаче фоновое движение, не связанное с задачей, мешало при когерентности 5%, ниже порога различения, а при 20% и выше результат не отличался от нулевой когерентности. Когда снижали контраст, порог и провал сдвигались вместе. Авторы предполагают, что у префронтальной коры порог обнаружения выше, чем у зрительной, и слабый сигнал не включает торможение. Грациано читает это как утечку: модель не отразила ресурс, уходящий к дистрактору, поэтому человек и не сообщает о нём, и не регулирует его.[^15]
+What Tsushima et al. showed[^17]: with a central task, task-irrelevant background motion interfered at 5% coherence, below the discrimination threshold, while at 20% and above performance did not differ from zero coherence. When contrast was lowered, the threshold and the dip shifted together. The authors suggest that the prefrontal cortex has a higher detection threshold than the visual cortex, so a weak signal does not trigger inhibition. Graziano reads this as a leak: the model failed to depict the resource going to the distractor, so the person neither reports it nor regulates it. In his words, "The controller cannot regulate the leak if it does not know about the leak."[^15]
 
-Постановка в стенде:
+The setup in the bench:
 
-- Отвлекающий стимул не связан с задачей, его сила меняется по сетке. Он забирает долю общего ресурса. Это утечка, а не перевод взгляда: систематических различий в движениях глаз Tsushima et al. не нашли.[^17]
-- Схема ни от чего не маскируется. Её предел чувствительности определяется шумом телеметрии.
-- Подавление – платное усилие $f_t$.
-- Порог определяется по данным: сила, при которой зонд регистрирует стимул из $s_t$ в половине случаев.
-- Стимул не входит в отчёт агента, иначе он становится значимым и эффект исчезает (проверка 3 ниже). Регистрация измеряется зондом. Поведенческий порог, если он нужен, измеряется в отдельном блоке после основного, как у авторов.[^17]
+- The distractor is unrelated to the task, and its strength varies over a grid. It takes a share of the common resource. This is a leak, not a shift of gaze: Tsushima et al. found no systematic differences in eye movements.[^17]
+- Nothing is masked from the schema. Its sensitivity limit is set by telemetry noise.
+- Suppression is the costly effort $f_t$.
+- The threshold is determined from data: the strength at which a probe registers the stimulus from $s_t$ in half of the cases.
+- The stimulus is not part of the agent's report: otherwise it becomes relevant and the effect disappears (check 3 below). Registration is measured by a probe. A behavioral threshold, if needed, is measured in a separate block after the main one, as the authors did.[^17]
 
-**Условие запуска.** Две ручные политики должны показать, что провал не создан самим механизмом: при постоянном усилии вред монотонно растёт с силой, а при усилии, включаемом по истине, провала нет.
+**Launch condition.** Two hand-written policies must show that the dip is not created by the mechanism itself: with constant effort harm grows monotonically with strength, and with effort switched on by the truth there is no dip.
 
-**Ожидание по Tsushima et al. в интерпретации AST:**
+**Expectation from Tsushima et al. as interpreted by AST:**
 
-1. Немонотонность: вред максимален чуть ниже порога, а более сильный стимул подавляется и вредит меньше.
-2. Сдвиг: при увеличении шума телеметрии порог и провал сдвигаются вместе. Шум меняется одинаково при обучении и проверке. Это аналог второго эксперимента Tsushima et al. и самая сильная из проверок: порог измеряется зондом, а провал – по задаче.
-3. Значимость: если стимул важен для задачи, провала нет.[^17]
-4. Связь функций: ниже порога стимул не читается из $r_t$, и усилие не включается.[^15]
+1. Non-monotonicity: harm peaks just below the threshold, while a stronger stimulus is suppressed and does less harm.
+2. Shift: as telemetry noise grows, the threshold and the dip move together. The noise changes equally in training and testing. This is an analogue of the second experiment of Tsushima et al. and the strongest of these checks: the threshold is measured by a probe and the dip by the task.
+3. Relevance: if the stimulus matters for the task, there is no dip.[^17]
+4. Link between functions: below the threshold the stimulus cannot be read from $r_t$, and effort does not switch on.[^15]
 
-Монотонная зависимость – отрицательный результат, а не ошибка постановки. Это рискованное предсказание, и задавать его проводкой нельзя.
+A monotonic dependence is a negative result, not a fault of the setup. This is a risky prediction, and it must not be set by wiring.
 
-### Э6. Возникновение схемы (версия B)
+### E6. Schema emergence (version B)
 
-Постановка Piefke et al.: свободный ресурс с собственными действиями, сетка шума p = 0; 0,25; 0,5; 0,75; 1.
+The Piefke et al. setup: a free resource with its own actions and a noise grid p = 0, 0.25, 0.5, 0.75, 1.
 
-Отличия от работы:[^8]
+Differences from the paper:[^8]
 
-- Алгоритм – DQN уровня 0 вместо PPO, сеть из трёх слоёв по 200. Наблюдение – один кадр, буфера памяти нет, как у авторов.
-- Дисконт 0,9, как в коде Piefke et al.
-- Несколько независимых обучений на каждый уровень вместо одного.
+- The algorithm is the level 0 DQN instead of PPO, with a network of three layers of 200. The observation is one frame with no memory buffer, as in the paper.
+- The discount is 0.9, as in the Piefke et al. code.
+- Several independent training runs per level instead of one.
 
-Это проверка того же вывода другим алгоритмом, а не точная репликация.
+This tests the same conclusion with another algorithm; it is not an exact replication.
 
-**Условие запуска.** Сначала при p = 0,5 обучаются положительный контроль со встроенной схемой и отрицательный контроль без ресурса. Если встроенная схема не учится, результат свободного ресурса не интерпретируется.
+**Launch condition.** First, at p = 0.5, a positive control with a built-in schema and a negative control without a resource are trained. If the built-in schema does not learn, the result with the free resource is not interpreted.
 
-Измерить:
+Measure:
 
-- полезность: разность результатов при обученных и случайных действиях ресурса;
-- содержание: положение окна по колонке из ресурса, из стимула и из обоих;
-- трудность вывода из стимула.
+- usefulness: the difference in results between learned and random resource actions;
+- content: the window position by column from the resource, from the stimulus and from both;
+- the difficulty of inference from the stimulus.
 
-**Ожидание:** полезность и содержание ресурса максимальны при промежуточном шуме и связаны с трудностью вывода. У авторов полезность максимальна при 0,5, а трудность – при 0,25, и связь оценена качественно.[^8]
+**Expectation:** the usefulness and content of the resource peak at intermediate noise and relate to the difficulty of inference. In the paper usefulness peaks at 0.5 and difficulty at 0.25, and the relation is assessed qualitatively.[^8]
 
-Дополнительно проверяется эфферентная копия. Если при механизме без возмущений история команд заменяет возникшую схему, ресурс оказывается памятью команд, а не моделью внимания. Поэтому вывод о возникновении засчитывается только после повторения в целевом режиме с захватом и шумом механизма.
+The efference copy is checked as well. If, with an undisturbed mechanism, command history replaces the emerged schema, the resource turns out to be a memory of commands and not a model of attention. A conclusion about emergence therefore counts only after repetition in the target mode with capture and mechanism noise.
 
-### Э7. Перенос, адаптация и обобщение
+### E7. Transfer, adaptation and generalization
 
-Способность адаптироваться к новым условиям – одно из главных свойств внутренней модели.[^15]
+The ability to adapt to new conditions is one of the main properties of an internal model.[^15]
 
-- **Адаптация.** Вводится постоянное смещение команды, как призма в моторных экспериментах, которые приводят авторы[^15]: $B(\bar c_t + u_t + \delta)$. Измерить скорость адаптации и последействие после снятия смещения. Сравнить полный контур с C2.
-- **Обобщение.** Связь подсказки и зонда обучается на части мест и проверяется на соседних необученных. У людей адаптация с 16 мест перешла на 6 необученных, где зонд был равновероятен с обеих сторон, и угасла после первого блока.[^15] В стенде это можно измерить чище: сначала при замороженных весах, затем с обновлением, чтобы увидеть угасание отдельно. Рекуррентное состояние меняется и при замороженных весах, это учитывается. Чисто локальная адаптация говорит не об общем правиле модели, а о низкоуровневом процессе.
-- **Перенос.** Новые задержки, сила захвата, комбинации объектов и частота вспышек.
+- **Adaptation.** A constant command offset is introduced, like the prism in the motor experiments the authors cite[^15]: $B(\bar c_t + u_t + \delta)$. Measure the adaptation speed and the after-effect once the offset is removed. Compare the full loop with C2.
+- **Generalization.** The link between cue and probe stimulus is trained at some locations and tested at neighboring untrained ones. In humans, adaptation from 16 locations transferred to 6 untrained ones, where the probe was equally likely on both sides, and faded after the first block.[^15] The bench can measure this more cleanly: first with frozen weights, then with updates, to see the fading separately. The recurrent state changes even with frozen weights, and this is taken into account. Purely local adaptation points to a low-level process, not to a general rule of a model.
+- **Transfer.** New delays, capture strength, object combinations and flash rates.
 
-## Расширения за пределами MVP
+## Extensions beyond the MVP
 
-Запускаются только после приёмки MVP, каждое со своей заморозкой.
+These run only after the MVP is accepted, each with its own freeze.
 
-| Расширение | Что проверяет | Условия |
+| Extension | What it tests | Conditions |
 | :-- | :-- | :-- |
-| Э8: саморегуляризация | Самомоделирование упрощает сеть[^10] | Цель – скрытые активации контроллера без `stop_grad`, как в источнике: там и прогноз, и цель зависят от весов.[^10] В основном контуре этого механизма нет, цель там отсечена и приходит не из сети. Измеряются ширина весов последнего слоя, эффективный ранг ковариации и точность. RLCT оценивается стохастической ланжевеновской динамикой и дорог, он только на Rust. Сетка веса подбирается под архитектуру: у малых сетей обучение срывается.[^10] Эффект показан не на внимании, и перенос на него не установлен |
-| Э9: внешняя предсказуемость | Схема делает внимание агента предсказуемее для наблюдателя[^11] | Отдельная сеть-наблюдатель по следам внимания. Сравнение с C2 |
-| Э10: кооперация | Социальная функция схемы[^11][^9] | Пары «схема + схема», смешанная, «контроль + контроль» без канала связи. Это не репликация: у Farrell et al. трансформеры и задача раскраски |
-| Обучаемая перцепция | HOT-4, связывание признаков | Замена ручного фильтра, повторение Э1–Э3 |
-| Дискретное узкое место | Устойчивость схемы, вариант ASAC[^12] | Сравнение с простым ограничением $d_s$ |
-| Схема решений | Общество схем[^4] | Модель процесса выбора, а не вклада команд. Проверяемое предсказание: объяснение прошлого решения влияет на следующее в серии решений[^4] |
-| Внимание по Джеймсу | Схема усиления представлений в больших сетях[^4] | Отдельный проект на языковой модели. На малых сетях TS и Rust не выполним, и эта ветка важнее всего для самого вопроса о сознании |
-| Локальный субстрат | Распределённая схема | По опыту версии B в `coherence-lab` |
+| E8: self-regularization | Self-modeling simplifies a network[^10] | The target is the controller's hidden activations without `stop_grad`, as in the source, where both prediction and target depend on the weights.[^10] The main loop has no such mechanism: its target is detached and does not come from the network. Measured: width of the last layer's weights, effective rank of the covariance, accuracy. RLCT is estimated by stochastic Langevin dynamics and is expensive, so it runs only in Rust. The weight grid is chosen for the architecture: small networks break down.[^10] The effect was not shown on attention, and its transfer to attention is not established |
+| E9: external predictability | The schema makes an agent's attention more predictable to an observer[^11] | A separate observer network reading traces of attention. Comparison with C2 |
+| E10: cooperation | The social function of the schema[^11][^9] | Pairs "schema + schema", mixed, "control + control", with no communication channel. This is not a replication: Farrell et al. use transformers and a coloring task |
+| Learned perception | HOT-4, feature binding | Replacing the hand-written filter, repeating E1 to E3 |
+| Discrete bottleneck | Schema robustness, an ASAC variant[^12] | Comparison with the simple limit $d_s$ |
+| Decision schema | The society of schemas[^4] | A model of the process of choice, not of the contribution of commands. Testable prediction: an account of a past decision influences the next one in a series[^4] |
+| Attention in James's sense | A schema of representation enhancement in large networks[^4] | A separate project on a language model. It cannot be done on small networks in TS and Rust, and this branch matters most for the question of consciousness itself |
+| Local substrate | A distributed schema | Based on the experience of version B in `coherence-lab` |
 
-## На что уже опереться
+## What to build on
 
-| Материал | Что брать |
+| Material | What to take |
 | :-- | :-- |
-| Wilterson & Graziano 2021[^7] | Постановку, опорные числа и параметры. Код и данные[^20] |
-| Piefke et al. 2024[^8] | Свободный ресурс, зонды, случайную подмену. Код: https://github.com/KietzmannLab/Attention-Schema-Analysis |
-| Liu et al. 2023[^9] | Разбиение отношений внимания и управления, рекуррентный контроль. Авторы называют результаты предварительными, а преимущества незначительными |
-| Farrell et al. 2024[^11] | Социальное расширение. Код: https://github.com/kathrynfarrell/attention_schemas_in_anns |
-| `coherence-lab` | Детерминированная арифметика, совместимость чисел TS и Rust (`jscompat`), обучаемые рекуррентные элементы и Adam в `web/src/lib/substrate`, протокол сравнения, формат отчёта |
+| Wilterson & Graziano 2021[^7] | The setup, reference numbers and parameters. Code and data[^20] |
+| Piefke et al. 2024[^8] | The free resource, probes, random substitution. Code: https://github.com/KietzmannLab/Attention-Schema-Analysis |
+| Liu et al. 2023[^9] | The breakdown of relations between attention and control, recurrent control. The authors call the results preliminary and the advantages marginal |
+| Farrell et al. 2024[^11] | The social extension. Code: https://github.com/kathrynfarrell/attention_schemas_in_anns |
+| `coherence-lab` | Deterministic arithmetic, TS and Rust number compatibility (`jscompat`), trainable recurrent elements and Adam in `web/src/lib/substrate`, the comparison protocol, the report format |
 
-У обоих репозиториев GitHub не показывает лицензии, в архиве 2021 года она тоже не указана, поэтому брать оттуда можно идеи и параметры, но не код.
+GitHub shows no license for either repository, and none is stated in the 2021 archive, so ideas and parameters may be taken from them but not code.
 
-Не стоит сразу объединять всё в одну систему: тогда неудачу будет невозможно локализовать.
+Everything should not be merged into one system at once: a failure would then be impossible to localize.
 
-## Практическое ТЗ на разработку
+## Practical development specification
 
-**Рекомендуемый первый результат – воспроизводимый программный стенд, а не «искусственная личность».** Важны детерминизм при фиксированном зерне, возможность обучения и доступ ко всем внутренним состояниям для вмешательств.
+**The recommended first result is a reproducible software bench, not an "artificial personality".** What matters is determinism at a fixed seed, the ability to learn, and access to all internal states for interventions.
 
-### Реализация
+### Implementation
 
-- **Эталон – TypeScript.** Node, без внешних ML-библиотек, собственные сети на `Float64Array`.
-- **Rust – вторая реализация с побайтной сверкой.** Сверяются трассы эпизодов, контрольные суммы весов и вывод команд, как в `coherence-lab`.
-- Логика стенда не зависит от интерфейса.
-- Истина мира не передаётся агенту ни через какой интерфейс.
+- **TypeScript is the reference.** Node, no external ML libraries, own networks on `Float64Array`.
+- **Rust is the second implementation, compared byte for byte.** Episode traces, weight checksums and command output are compared, as in `coherence-lab`.
+- The bench logic does not depend on the interface.
+- The world's truth is not passed to the agent through any interface.
 
-### Компоненты поставки
+### Deliverables
 
-| Компонент | Требование |
+| Component | Requirement |
 | :-- | :-- |
-| Среда | Уровень 0 и целевой режим; геометрия эпизода зависит от зерна |
-| Механизм внимания | Карта приоритета и ресурса, захват, усилие, телеметрия; окно для уровня 0 |
-| Перцепция | Ручной фильтр по $x_t$ для целевого режима |
-| Схема внимания | Рекуррентный модуль, предсказательные головы, варианты из таблицы |
-| Модель себя и отношение | $e_t$, $r_t$ |
-| Контроллер | Команды внимания, усилие, платформа, отчёт |
-| Обучение | Сети, Adam, PPO, DQN для уровня 0, усечённое обратное распространение |
-| Вмешательства | Отключение, подмена, заморозка и возмущение связей и состояний |
-| Оценщик | Истина, зонды, базы контекста |
-| Журнал эксперимента | Конфигурации, зёрна, кривые, вердикты, недействительные прогоны |
-| Лаборатория | Интерфейс на русском: реальная карта ресурса и оценка схемы поверх шумного кадра, расхождение, кнопки вмешательств, ползунки шума и захвата. Работает на заранее обученных весах |
+| Environment | Level 0 and the target mode; episode geometry depends on the seed |
+| Attention mechanism | Priority and resource maps, capture, effort, telemetry; a window for level 0 |
+| Perception | A hand-written filter on $x_t$ for the target mode |
+| Attention schema | Recurrent module, predictive heads, the variants from the table |
+| Self-model and relation | $e_t$, $r_t$ |
+| Controller | Attention commands, effort, paddle, report |
+| Training | Networks, Adam, PPO, DQN for level 0, truncated backpropagation |
+| Interventions | Disabling, substitution, freezing and perturbation of links and states |
+| Evaluator | Truth, probes, context baselines |
+| Experiment log | Configurations, seeds, curves, verdicts, invalid runs |
+| Laboratory | An interface in Russian: the real resource map and the schema's estimate over the noisy frame, the mismatch, intervention buttons, noise and capture sliders. It runs on pretrained weights |
 
-Названия модулей не являются доказательством наличия соответствующих функций.
+Module names are not evidence that the corresponding functions exist.
 
-### Вычислительный бюджет
+### Computational budget
 
-Предварительный замер прототипа на машине разработки (Apple M4, одно ядро). Одно обновление сети 2000–200–200–200–16, 483 816 параметров, батч 100, Adam:
+A preliminary prototype measurement on the development machine (Apple M4, one core). One update of a 2000–200–200–200–16 network, 483,816 parameters, batch 100, Adam:
 
-| Реализация | Мс на обновление |
+| Implementation | Ms per update |
 | :-- | --: |
 | TypeScript, Node 26.3.1 | 107 |
-| Rust, скалярный binary64 без FMA и перестановок | 85 |
+| Rust, scalar binary64 without FMA or reordering | 85 |
 
-С ограничениями побайтной сверки Rust быстрее всего примерно в 1,3 раза. Рабочая реализация пропускает нулевые входы и даёт 56 мс при трёх параллельных обучениях и 82–104 мс при десяти. Главный ресурс – независимые обучения параллельно на ядрах, а он доступен и в Node через worker-потоки.
+Under the constraints of byte-for-byte comparison, Rust is only about 1.3 times faster. The working implementation skips zero inputs and takes 56 ms with three parallel training runs and 82 to 104 ms with ten. The main resource is independent runs in parallel across cores, and it is available in Node too through worker threads.
 
-Оценка цены репликаций:
+Estimated cost of the replications:
 
-- **Wilterson & Graziano.** 100 обновлений за итерацию, всего 150 000, от 2,5 до 4 часов на одно обучение в Node в зависимости от числа параллельных обучений.
-- **Piefke et al.** Около 5 млн параметров, примерно в 11 раз тяжелее, то есть порядка 1,2 с на обновление. Пять уровней шума – 22 974 итерации и не меньше 2,3 млн обновлений: около месяца на одном ядре при одном агенте на уровень. В полном размере это не выполнимо ни на TypeScript, ни на Rust.
+- **Wilterson & Graziano.** 100 updates per iteration, 150,000 in total, 2.5 to 4 hours per training run in Node depending on the number of parallel runs.
+- **Piefke et al.** About 5 million parameters, roughly 11 times heavier, so on the order of 1.2 s per update. Five noise levels are 22,974 iterations and at least 2.3 million updates: about a month on one core with one agent per level. At full size this is not feasible in TypeScript or in Rust.
 
-Отсюда правила:
+Hence the rules:
 
-- Параметры уровня 0 берутся из опубликованного кода авторов. Умолчания библиотеки и отличия от кода перечисляются в отчёте.
-- Э6 выполняется на DQN уровня 0, а не на PPO авторов. Это отличие указывается в отчёте.
-- Обучения запускаются параллельно по зёрнам.
-- Rust нужен ради второй независимой реализации и сверки, а не ради скорости.
-- Сети целевого режима должны быть малы, это одна из причин ручной перцепции.
+- Level 0 parameters come from the authors' published code. Library defaults and differences from the code are listed in the report.
+- E6 runs on the level 0 DQN, not on the authors' PPO. This difference is stated in the report.
+- Training runs in parallel by seed.
+- Rust is needed as a second independent implementation and for comparison, not for speed.
+- Target mode networks must be small, which is one reason for hand-written perception.
 
-### Порядок работ
+### Work order
 
-1. **Мир уровня 0 и механизм внимания.** Проверка: подсчёт событий, ручная идеальная политика, C0.
-2. **Репликация Wilterson & Graziano.** Встроенная схема, абляция, обучение без неё. Дополнительно – замена схемы историей команд. Проверка: качественное совпадение с опорными числами.
-3. **Возникновение схемы (Э6, первый этап)** на DQN уровня 0. Проверка: контроли выполнимости, затем качественное сравнение с Piefke et al. при p = 0,5.
-4. **Целевой мир и контроль Ф4.** Заморозка постановки, если источники разделены.
-5. **Контроль C6 и базовые контроли C1–C3.** Обучение, фиксация планки.
-6. **Обучаемая схема и полный контур.** C4, C5, C7, C8, эксперименты Э1 и Э3.
-7. **Отношение и отчёт.** C9, Э2 и Э5.
-8. **Э4 и Э7.**
-9. **Версия B в целевом режиме.**
-10. **Перенос на Rust** с побайтной сверкой, если он не потребовался раньше.
-11. **Лаборатория** и публикация.
+1. **The level 0 world and attention mechanism.** Check: event count, hand-written ideal policy, C0.
+2. **Replication of Wilterson & Graziano.** Built-in schema, ablation, training without it. In addition, replacing the schema with a command history. Check: qualitative agreement with the reference numbers.
+3. **Schema emergence (E6, first stage)** on the level 0 DQN. Check: feasibility controls, then a qualitative comparison with Piefke et al. at p = 0.5.
+4. **The target world and control F4.** Freeze the setup if the sources are separated.
+5. **Control C6 and baseline controls C1 to C3.** Training, fixing the baseline.
+6. **The learned schema and the full loop.** C4, C5, C7, C8, experiments E1 and E3.
+7. **The relation and report.** C9, E2 and E5.
+8. **E4 and E7.**
+9. **Version B in the target mode.**
+10. **Port to Rust** with byte-for-byte comparison, if it was not needed earlier.
+11. **The laboratory** and publication.
 
-Шаги 1–3 привязывают стенд к литературе. Шаги 4–8 проверяют гипотезы 1–4. Шаг 9 проверяет гипотезу 5. Положительный итог всех шагов – аргумент в пользу управляющей функции схемы в малых системах, а не в пользу AST как теории сознания.
+Steps 1 to 3 anchor the bench to the literature. Steps 4 to 8 test hypotheses 1 to 4. Step 9 tests hypothesis 5. A positive outcome of all steps is an argument for the control function of the schema in small systems, not for AST as a theory of consciousness.
 
-### Критерий приёмки
+### Acceptance criteria
 
-**Приёмка стенда не зависит от того, подтвердились ли гипотезы.** Стенд принят, если:
+**Acceptance of the bench does not depend on whether the hypotheses are confirmed.** The bench is accepted if:
 
-- Внимание реально меняет обработку, что показано на C0.
-- Команда и фактический фокус расходятся, а контроль Ф4 пройден.
-- Контроли выполнимости пройдены до сравнения, все постановки заморожены.
-- Уровень 0 качественно воспроизводит опубликованные результаты, или расхождение объяснено.
-- Каждое вмешательство меняет именно заявленное состояние и не меняет других. Это проверяется тестами.
-- TS и Rust дают побайтно одинаковые выводы на контрольных прогонах.
-- Результаты и недействительные прогоны записаны, сравнения проведены однократно на новых зёрнах.
-- Все выводы отделены от утверждения о феноменальном опыте.
+- Attention really changes processing, as shown by C0.
+- The command and the actual focus diverge, and control F4 is passed.
+- Feasibility controls are passed before comparison, and all setups are frozen.
+- Level 0 qualitatively reproduces the published results, or the discrepancy is explained.
+- Each intervention changes exactly the stated state and no other. This is checked by tests.
+- TS and Rust give byte-identical outputs on control runs.
+- Results and invalid runs are recorded, and comparisons are run once on new seeds.
+- All conclusions are separated from any claim about phenomenal experience.
 
-**Формулировка «агент с обученной причинно действующей схемой внимания» допускается, только если одновременно:**
+**The wording "an agent with a learned, causally effective attention schema" is allowed only if all of the following hold:**
 
-- полный контур лучше C2 и C5, а преимущество не объясняется C1, C3 и C7;
-- схема оценивает фактическое состояние, а не повторяет команды: в Э2Б она восстанавливается;
-- ложная схема вызывает направленную ошибку управления и сдвиг отчёта;
-- меры Э1 показывают ухудшение управления, а не только падение среднего результата;
-- преимущества воспроизводятся на новых траекториях и возмущениях (Э7).
+- the full loop beats C2 and C5, and the advantage is not explained by C1, C3 and C7;
+- the schema estimates the actual state and does not just repeat commands: it recovers in E2B;
+- a false schema causes a directional control error and a shift in report;
+- the E1 measures show worse control, not only a lower mean result;
+- the advantages reproduce on new trajectories and perturbations (E7).
 
-Формулировка **«AST-подобная самоатрибуция»** требует ещё содержательной связи «агент – внимание – объект», которая влияет на решения, а не только на отчёт, и превосходства над C9.
+The wording **"AST-like self-attribution"** additionally requires a meaningful "agent, attention, object" link that affects decisions and not only report, and superiority over C9.
 
-**Отрицательный результат при честных контролях – аргумент против гипотезы в данной постановке, а не провал работы.**
+**A negative result with honest controls is an argument against the hypothesis in this setup, not a failure of the work.**
 
-Практически самая содержательная демонстрация выглядела бы так: агент ошибочно представляет, куда направлено его внимание, из-за этого выбирает неправильную команду, обнаруживает расхождение по последствиям и исправляет собственную модель.
+The most meaningful practical demonstration would look like this: the agent misrepresents where its attention is, chooses the wrong command because of this, detects the mismatch from the consequences, and corrects its own model.
 
-Поля протокола для каждой гипотезы:
+Protocol fields for each hypothesis:
 
-| Поле | Допустимые значения |
+| Field | Allowed values |
 | :-- | :-- |
-| Индикатор | AST-1, AE-2; HOT-4 в версии A не проверяется |
-| Механизм | Реализован / не реализован |
-| Причинная роль | Подтверждена / не подтверждена, с разностью и интервалом |
-| Альтернативное объяснение | Исключено / не исключено / не применимо, отдельно по C1, C2, C3, C7 |
-| Постановка | Действительна / недействительна, с причиной |
-| Феноменальное сознание | Не установлено |
+| Indicator | AST-1, AE-2; HOT-4 is not tested in version A |
+| Mechanism | Implemented / not implemented |
+| Causal role | Confirmed / not confirmed, with difference and interval |
+| Alternative explanation | Ruled out / not ruled out / not applicable, separately for C1, C2, C3, C7 |
+| Setup | Valid / invalid, with the reason |
+| Phenomenal consciousness | Not established |
 
-**В протоколе не должно быть строки «квалиа: PASS».**
+**The protocol must not contain a line "qualia: PASS".**
 
-На этом этапе нет необходимости вводить боль, страх выключения или страдание: достаточно нейтральных задач восприятия и управления. Поэтапность и минимизация возможного вреда соответствуют опубликованным принципам ответственного исследования машинного сознания.[^18]
+At this stage there is no need to introduce pain, fear of shutdown or suffering: neutral tasks of perception and control are enough. Working in stages and minimizing possible harm follows published principles for responsible research on machine consciousness.[^18]
 
-## Источники
+## Sources
 
 [^1]: Graziano M. S. A. *A conceptual framework for consciousness.* PNAS 119(18), 2022. https://doi.org/10.1073/pnas.2116933119 · PMC: https://pmc.ncbi.nlm.nih.gov/articles/PMC9170028/
 
 [^2]: Webb T. W., Graziano M. S. A. *The attention schema theory: a mechanistic account of subjective awareness.* Frontiers in Psychology 6:500, 2015. https://doi.org/10.3389/fpsyg.2015.00500
 
-[^3]: Graziano M. S. A. *The Attention Schema Theory.* Глава 2.4 раздела Theoretical Frameworks and their Testable Predictions, рукопись главы, выложена в 2026 г. https://static1.squarespace.com/static/6605831012d79b3ae78b24e0/t/6a0f6f245f4e53042aa75135/1779396388801/Ch._2.4_Graziano.pdf
+[^3]: Graziano M. S. A. *The Attention Schema Theory.* Chapter 2.4 of the section Theoretical Frameworks and their Testable Predictions, chapter manuscript posted in 2026. https://static1.squarespace.com/static/6605831012d79b3ae78b24e0/t/6a0f6f245f4e53042aa75135/1779396388801/Ch._2.4_Graziano.pdf
 
 [^4]: Graziano M. S. A. *Understanding consciousness (biological and artificial) as a society of self-schemas.* PNAS 123(42), 2026. https://doi.org/10.1073/pnas.2628598123
 
@@ -826,13 +826,13 @@ C2 может построить неявную модель внимания. �
 
 [^9]: Liu D., Bolotta S., Zhu H., Bengio Y., Dumas G. *Attention Schema in Neural Agents.* arXiv:2305.17375, 2023. https://arxiv.org/abs/2305.17375
 
-[^10]: Premakumar V. N., Vaiana M., Pop F., Rosenblatt J., Schwerz de Lucena D., Ziman K., Graziano M. S. A. *Unexpected benefits of self-modelling in neural systems.* Philosophical Transactions of the Royal Society A 384, 20240531, 2026. https://doi.org/10.1098/rsta.2024.0531 · препринт, по которому сверены детали: https://arxiv.org/abs/2407.10188
+[^10]: Premakumar V. N., Vaiana M., Pop F., Rosenblatt J., Schwerz de Lucena D., Ziman K., Graziano M. S. A. *Unexpected benefits of self-modelling in neural systems.* Philosophical Transactions of the Royal Society A 384, 20240531, 2026. https://doi.org/10.1098/rsta.2024.0531 · details were checked against the preprint: https://arxiv.org/abs/2407.10188
 
-[^11]: Farrell K. T., Ziman K., Graziano M. S. A. *Testing Components of the Attention Schema Theory in Artificial Neural Networks.* arXiv:2411.00983, 2024, обновлено в августе 2025. Первая версия: *Improving How Agents Cooperate: Attention Schemas in Artificial Neural Networks.* https://arxiv.org/abs/2411.00983
+[^11]: Farrell K. T., Ziman K., Graziano M. S. A. *Testing Components of the Attention Schema Theory in Artificial Neural Networks.* arXiv:2411.00983, 2024, updated in August 2025. First version: *Improving How Agents Cooperate: Attention Schemas in Artificial Neural Networks.* https://arxiv.org/abs/2411.00983
 
 [^12]: Saxena K., Jurado Ruiz F., Manzi G., Liu D., Lamb A. *Attention Schema-based Attention Control (ASAC): A Cognitive-Inspired Approach for Attention Management in Transformers.* arXiv:2509.16058, 2025. https://arxiv.org/abs/2509.16058
 
-[^13]: Butlin P., Long R. et al. *Consciousness in Artificial Intelligence: Insights from the Science of Consciousness.* arXiv:2308.08708, 2023. https://arxiv.org/abs/2308.08708 · итоговый обзор в Trends in Cognitive Sciences (https://doi.org/10.1016/j.tics.2025.10.011) не сверялся.
+[^13]: Butlin P., Long R. et al. *Consciousness in Artificial Intelligence: Insights from the Science of Consciousness.* arXiv:2308.08708, 2023. https://arxiv.org/abs/2308.08708 · the final review in Trends in Cognitive Sciences (https://doi.org/10.1016/j.tics.2025.10.011) was not checked.
 
 [^14]: Webb T. W., Kean H. H., Graziano M. S. A. *Effects of Awareness on the Control of Attention.* Journal of Cognitive Neuroscience 28(6), 2016. https://doi.org/10.1162/jocn_a_00931
 
@@ -846,4 +846,4 @@ C2 может построить неявную модель внимания. �
 
 [^19]: Conant R. C., Ashby W. R. *Every good regulator of a system must be a model of that system.* International Journal of Systems Science 1(2), 1970.
 
-[^20]: Wilterson A., Graziano M. *The Attention Schema Theory in an Artificial Neural Network Agent: Controlling Visuospatial Attention Using a Descriptive Model of Attention* (код и данные). Princeton Data Commons, 2021. https://doi.org/10.34770/8bd1-1x14
+[^20]: Wilterson A., Graziano M. *The Attention Schema Theory in an Artificial Neural Network Agent: Controlling Visuospatial Attention Using a Descriptive Model of Attention* (code and data). Princeton Data Commons, 2021. https://doi.org/10.34770/8bd1-1x14
