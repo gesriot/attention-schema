@@ -16,7 +16,7 @@ import {
 } from "./probes.ts";
 
 export const noiseGrid = [0, 0.25, 0.5, 0.75, 1];
-export const emergenceConditions = ["free", "given", "off"] as const;
+export const emergenceConditions = ["free", "given", "off", "clock", "start", "parked"] as const;
 export type EmergenceCondition = (typeof emergenceConditions)[number];
 export type EmergenceSettings = { training: TrainingConfig; probes: ProbeConfig };
 export const publishedEmergence: EmergenceSettings = {
@@ -54,8 +54,8 @@ export function emergenceChecks(condition: EmergenceCondition): Check[] {
   if (condition === "free") {
     return ["normal", "resourceRandom", "resourceStill", "fieldOff", "windowOff"];
   }
-  if (condition === "given") return ["normal", "fieldOff", "windowOff"];
-  return ["normal", "windowOff"];
+  if (condition === "off") return ["normal", "windowOff"];
+  return ["normal", "fieldOff", "windowOff"];
 }
 
 export function makeEmergenceJob(

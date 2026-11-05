@@ -201,3 +201,29 @@ Probes, as lift over the most frequent class:
 **Limitations:** one noise level, 5 subjects, no agent without a resource at this length, and the combined probe has no motionless baseline.
 
 To reproduce: `npm run level0:emergence -- --conditions free --noise 0.5 --subjects 5 --iterations 6000 --eval-every 10 --workers 5 --out runs/emergence-6000`, about 6 hours.
+
+## Planned exploratory tests
+
+Written on 5 November 2026 before any of these runs started, and not changed afterward. All are exploratory: 5 subjects each, while the specification requires 15 to 30 pairs for confirmatory comparisons.
+
+An effect means a paired difference in tracking of at least 0.3 whose 95% interval (mean ± 2.78 standard errors) excludes zero.
+
+**T1. Window slips.** With probability 0.3 per step the window moves one extra cell past the command, at level 0 with 1500 iterations and conditions schema, commands, none. The rate was chosen on hand policies only (tracking at slip 0 and 0.3): truth 4.00 and 3.20, command tracker 3.55 and 1.42, tracker reading the schema field 4.00 and 2.46.
+
+- Supported if schema minus commands is an effect and commands minus none is below 0.3. It was 0.64 without slips.
+- Not supported if commands minus none stays at 0.3 or more: command memory still helps when commands do not determine the focus.
+
+**T2. Clock.** At noise 0.5 with 6000 iterations and the seeds of the free resource run, the field shows only the time step (`clock`), only the starting column (`start`), or a parked square with both (`parked`). The action space has 6 actions instead of 18, which favors these conditions.
+
+- The clock explanation is supported if `clock` comes within 0.3 of the free resource (2.80).
+- It is refuted if the free resource beats `clock` by an effect.
+
+**T3. Active use of the resource.** Same runs.
+
+- Active writing helps if the free resource beats `parked` by an effect.
+- It does not if `parked` matches or beats it.
+
+**T4. First-frame bug at full length.** Conditions schema and none at level 0 with the bug reproduced in a temporary copy, 1500 iterations.
+
+- The published gap is inflated by the bug if the no-schema result with the bug is at least 0.3 below the bench's 1.13, with an interval excluding zero by unpaired standard errors.
+- It is not if the two no-schema results differ by less than 0.3.

@@ -6,6 +6,7 @@ export type TrainingOptions<Condition extends string> = {
   conditions: Condition[];
   out: string | null;
   noise?: number[];
+  slip?: number;
 };
 
 export function parseTrainingOptions<Condition extends string>(
@@ -13,6 +14,7 @@ export function parseTrainingOptions<Condition extends string>(
   conditions: readonly Condition[],
   evalEvery: number,
   noiseGrid?: readonly number[],
+  allowSlip = false,
 ): TrainingOptions<Condition> {
   const result: TrainingOptions<Condition> = {
     subjects: 5,
@@ -55,6 +57,10 @@ export function parseTrainingOptions<Condition extends string>(
         throw new Error(`Допустимые уровни шума: ${noiseGrid.join(",")}, без повторов`);
       }
       result.noise = noiseGrid.filter((noise) => requested.includes(noise));
+    } else if (flag === "--slip" && allowSlip) {
+      const slip = Number(value);
+      if (!(slip > 0 && slip < 1)) throw new Error("Вероятность сбоя должна быть между 0 и 1");
+      result.slip = slip;
     } else if (flag === "--out") {
       result.out = value;
     } else if (Object.hasOwn(keys, flag)) {

@@ -37,6 +37,7 @@ export type TrainJob = {
   iterations: number;
   evalEvery: number;
   config: TrainingConfig;
+  slip?: number;
 };
 export type CurvePoint = {
   iteration: number;
@@ -73,12 +74,17 @@ export type Collector = {
   discount: number;
 };
 
-export function conditionConfig(condition: Condition, windowActive = true): WorldConfig {
+export function conditionConfig(
+  condition: Condition,
+  windowActive = true,
+  slip?: number,
+): WorldConfig {
   return {
     variant: "wilterson",
     schema: condition === "schema" ? "given" : condition === "none" ? "off" : "commands",
     noise: 0.5,
     windowActive,
+    ...(slip === undefined ? {} : { slip }),
   };
 }
 
@@ -269,7 +275,11 @@ export function trainSubject(
       iterations: job.iterations,
       evalEvery: job.evalEvery,
       config: job.config,
-      environment: { world: conditionConfig(job.condition), frames: 10, discount: 0.4 },
+      environment: {
+        world: conditionConfig(job.condition, true, job.slip),
+        frames: 10,
+        discount: 0.4,
+      },
       checks: checksFor(job.condition),
     },
     onEvent,

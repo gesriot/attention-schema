@@ -31,7 +31,7 @@ const checkNames: Record<Check, string> = {
 };
 
 export function parseOptions(args: string[]): Options {
-  return parseTrainingOptions(args, conditions, 10);
+  return parseTrainingOptions(args, conditions, 10, undefined, true);
 }
 
 export async function runJobs(
@@ -49,6 +49,7 @@ export async function runJobs(
         iterations: options.iterations,
         evalEvery: options.evalEvery,
         config,
+        ...(options.slip === undefined ? {} : { slip: options.slip }),
       });
     }
   }

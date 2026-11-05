@@ -1,15 +1,15 @@
-import { createRng, nextInt, type Rng } from "../rng.ts";
+import { createRng, nextInt, nextUnit, type Rng } from "../rng.ts";
 
 export type Variant = "wilterson" | "piefke";
 export type ActionSpace =
   | { variant: "wilterson"; schema: "given" | "off" | "commands" }
-  | { variant: "piefke"; schema: "given" | "off" | "free" };
-export type WorldConfig = ActionSpace & { noise: number; windowActive: boolean };
+  | { variant: "piefke"; schema: "given" | "off" | "free" | "clock" | "start" | "parked" };
+export type WorldConfig = ActionSpace & { noise: number; windowActive: boolean; slip?: number };
 export type Position = { row: number; col: number };
 export type Action = { paddle: 0 | 1; attention: number; resource: number };
 export type World = {
   config: WorldConfig;
-  rng: { world: Rng; noise: Rng };
+  rng: { world: Rng; noise: Rng; slip: Rng };
   t: number;
   startCol: number;
   landingCol: number;
@@ -129,6 +129,14 @@ function createFrame(world: Omit<World, "frame">, action: number | null = null):
   if (world.config.schema === "given") fillSquare(frame, world.window, 100, 1);
   if (world.resource !== null) fillSquare(frame, world.resource, 100, 1);
   if (world.config.schema === "commands" && action !== null) frame[100 + action] = 1;
+  // These fields hold what a square left in place shows, or one part of it.
+  const row = Math.min(world.t, 8);
+  const col = clampCenter(world.startCol);
+  if (world.config.schema === "clock") frame.fill(1, 100 + (row - 1) * 10, 100 + (row + 2) * 10);
+  if (world.config.schema === "parked") fillSquare(frame, { row, col }, 100, 1);
+  if (world.config.schema === "start") {
+    for (let y = 0; y < 10; y++) frame.fill(1, 100 + y * 10 + col - 1, 100 + y * 10 + col + 2);
+  }
   return frame;
 }
 
@@ -137,7 +145,7 @@ export function createWorld(config: WorldConfig, seed: number): World {
     throw new RangeError("Уровень шума должен быть от 0 до 1");
   }
   // Stream 0 draws start, then landing, once; stream 1 draws every noise mask.
-  const rng = { world: createRng(seed, 0), noise: createRng(seed, 1) };
+  const rng = { world: createRng(seed, 0), noise: createRng(seed, 1), slip: createRng(seed, 8) };
   const startCol = nextInt(rng.world, 10);
   const landingCol = nextInt(rng.world, 10);
   const window = { row: 1, col: clampCenter(startCol) };
@@ -162,6 +170,10 @@ export function stepWorld(world: World, action: number): World {
   if (world.t === 10) throw new RangeError("Эпизод уже завершён");
   const command = decodeAction(world.config, action);
   world.window = moveWindow(world.window, world.config.variant, command.attention);
+  // A slip moves the window past the command; nothing in the frame reports it directly.
+  if (world.config.slip !== undefined && nextUnit(world.rng.slip) < world.config.slip) {
+    world.window = moveWindow(world.window, "wilterson", nextInt(world.rng.slip, 8));
+  }
   if (world.resource !== null) {
     world.resource = moveWindow(world.resource, world.config.variant, command.resource);
   }

@@ -24,6 +24,9 @@ const conditionNames: Record<EmergenceCondition, string> = {
   free: "свободный ресурс",
   given: "заданная схема",
   off: "без ресурса",
+  clock: "часы",
+  start: "колонка старта",
+  parked: "неподвижный квадрат",
 };
 const sourceNames: Record<ProbeSource, string> = {
   resource: "ресурс",
