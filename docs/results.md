@@ -122,3 +122,44 @@ Paired differences in the normal test, 5 subjects:
 - 5 subjects. The best catch result is below the hand-written tracker: 1.04 against 1.78.
 
 To reproduce: `npm run level0:train -- --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/level0`, about 6.5 hours on 8 threads.
+
+## Level 0: E6, first stage at noise 0.5
+
+**Setup:** the level 0 DQN instead of the PPO of Piefke et al., one frame per observation, discount 0.9, 3 conditions with 5 subjects each, 1500 iterations, a test every 10 iterations with 200 episodes. Numbers are the mean of the last 10 tests for each subject, then the mean and standard error over subjects. Piefke et al. trained one agent per noise level.
+
+| Condition | Test | Tracking out of 4 | Catch out of 2 | Piefke et al. |
+| :-- | :-- | --: | --: | --: |
+| Built-in schema | Normal | 3.84 ± 0.02 | 1.67 ± 0.02 | 3.73 / 1.77 |
+| No resource | Normal | −0.30 ± 0.04 | −0.81 ± 0.02 | −0.39 / −0.84 |
+| Free resource | Normal | 1.09 ± 0.10 | −0.78 ± 0.01 | 3.74 / 1.73 |
+| Free resource | Random resource actions | 0.64 ± 0.10 | −0.81 ± 0.02 | 0.93 / −0.03 |
+| Free resource | Motionless resource | 0.75 ± 0.11 | −0.79 ± 0.02 | – |
+| Free resource | Resource off | −0.55 ± 0.05 | −0.80 ± 0.02 | −0.82 / −0.89 |
+
+Usefulness of the resource, paired differences for tracking: 0.45 ± 0.05 against random actions and 0.34 ± 0.03 against a motionless resource. For the catch it is 0.03 ± 0.03 and 0.01 ± 0.02.
+
+Probes of the window's column, as lift over the most frequent class:
+
+| Source | Accuracy | Lift |
+| :-- | --: | --: |
+| Stimulus and resource | 0.801 ± 0.008 | 0.745 ± 0.003 |
+| Stimulus | 0.642 ± 0.013 | 0.542 ± 0.014 |
+| Motionless resource | 0.551 ± 0.029 | 0.405 ± 0.021 |
+| Untrained agent | 0.540 ± 0.064 | 0.274 ± 0.032 |
+| **Resource** | 0.416 ± 0.023 | 0.252 ± 0.021 |
+| Random resource | 0.359 ± 0.028 | 0.159 ± 0.009 |
+| Time only | 0.257 ± 0.025 | 0.048 ± 0.011 |
+
+**Verdict:**
+
+- **The launch condition is met.** The built-in schema learns and the agent without a resource does not, and both land close to Piefke et al. Discount 0.9 without a separate target network caused no instability.
+- **Emergence is not shown at 1500 iterations.** The agent's own resource carries less information about the window than a square left in place: lift 0.25 against 0.41. Against the random baseline alone (0.16) this would have looked like emergence, so the motionless baseline changed the conclusion.
+- **The resource gives a partial gain in tracking and none in the catch.** Its active use is worth more than leaving it in place, but what it stores is not established.
+- **Training has not converged.** Tracking with the free resource went from 0.62 at iteration 1000 to 0.98 at 1250 and 1.07 at 1500. Piefke et al. report 5797 training epochs at this noise level.
+
+**Limitations:**
+
+- The combined probe of stimulus and resource (0.745 against 0.542) has no motionless baseline, so it does not show that the learned resource adds anything a parked square would not.
+- The built-in schema here beats the level 0 full run (3.84 and 1.67 against 3.57 and 1.04), although it has no frame memory. The discount and the input differ, and the cause was not tested.
+
+To reproduce: `npm run level0:emergence -- --conditions free,given,off --noise 0.5 --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/emergence`, about 3.3 hours on 8 threads.
