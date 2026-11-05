@@ -22,4 +22,5 @@ npm test
 
 ```sh
 npm run level0:check   # уровень 0: ручные проверки среды
+npm run level0:train   # уровень 0: обучение DQN
 ```

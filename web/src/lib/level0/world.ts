@@ -2,7 +2,7 @@ import { createRng, nextInt, type Rng } from "../rng.ts";
 
 export type Variant = "wilterson" | "piefke";
 export type ActionSpace =
-  | { variant: "wilterson"; schema: "given" | "off" }
+  | { variant: "wilterson"; schema: "given" | "off" | "commands" }
   | { variant: "piefke"; schema: "given" | "off" | "free" };
 export type WorldConfig = ActionSpace & { noise: number; windowActive: boolean };
 export type Position = { row: number; col: number };
@@ -119,7 +119,7 @@ function fillSquare(frame: Uint8Array, center: Position, offset: number, value: 
   }
 }
 
-function createFrame(world: Omit<World, "frame">): Uint8Array {
+function createFrame(world: Omit<World, "frame">, action: number | null = null): Uint8Array {
   const frame = new Uint8Array(200);
   frame.set(createNoiseMask(world.rng.noise, world.config.noise));
   frame.fill(0, 90, 100);
@@ -128,6 +128,7 @@ function createFrame(world: Omit<World, "frame">): Uint8Array {
   frame.fill(1, 90 + world.paddle - 1, 90 + world.paddle + 2);
   if (world.config.schema === "given") fillSquare(frame, world.window, 100, 1);
   if (world.resource !== null) fillSquare(frame, world.resource, 100, 1);
+  if (world.config.schema === "commands" && action !== null) frame[100 + action] = 1;
   return frame;
 }
 
@@ -168,7 +169,7 @@ export function stepWorld(world: World, action: number): World {
   world.paddle = movePaddle(world.paddle, command.paddle);
   world.ball.row++;
   world.t++;
-  world.frame = createFrame(world);
+  world.frame = createFrame(world, action);
   if (world.t === 10) {
     world.reward = Math.abs(world.ball.col - world.paddle) <= 1 ? 2 : -2;
     world.catchScore += world.reward;

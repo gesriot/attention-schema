@@ -19,3 +19,9 @@ export function nextUnit(rng: Rng): number {
 export function nextInt(rng: Rng, n: number): number {
   return Math.floor(nextUnit(rng) * n);
 }
+
+export function nextNormal(rng: Rng): number {
+  // Use 1-u to avoid log(0); discard the sine sample from each pair.
+  const radius = Math.sqrt(-2 * Math.log(1 - nextUnit(rng)));
+  return radius * Math.cos(2 * Math.PI * nextUnit(rng));
+}
