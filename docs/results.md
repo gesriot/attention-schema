@@ -163,3 +163,41 @@ Probes of the window's column, as lift over the most frequent class:
 - The built-in schema here beats the level 0 full run (3.84 and 1.67 against 3.57 and 1.04), although it has no frame memory. The discount and the input differ, and the cause was not tested.
 
 To reproduce: `npm run level0:emergence -- --conditions free,given,off --noise 0.5 --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/emergence`, about 3.3 hours on 8 threads.
+
+## Level 0: E6, 6000 iterations at noise 0.5
+
+**Setup:** the free resource only, otherwise as in the first stage, 5 subjects, 6000 iterations. The number comes from the 5797 training epochs reported by Piefke et al.; their epochs are not the same unit as our iterations.
+
+| Test | Tracking out of 4 | Catch out of 2 |
+| :-- | --: | --: |
+| Normal | 2.80 ± 0.03 | −0.23 ± 0.16 |
+| Motionless resource | 2.54 ± 0.05 | −0.30 ± 0.13 |
+| Random resource actions | 2.39 ± 0.06 | −0.33 ± 0.12 |
+| Resource off | −0.53 ± 0.07 | −0.84 ± 0.03 |
+| Window off | −0.30 ± 0.03 | −0.88 ± 0.03 |
+
+For comparison, the built-in schema reached 3.77 and 1.64 by iteration 750. Normal tracking is close to a plateau: 2.75 at iteration 5000 and 2.80 at 6000.
+
+Usefulness of the resource, paired differences: 0.41 ± 0.08 for tracking against random actions, 0.26 ± 0.07 against a motionless resource. For the catch it is 0.10 ± 0.04 and 0.07 ± 0.04.
+
+Probes, as lift over the most frequent class:
+
+| Source | Lift |
+| :-- | --: |
+| Stimulus and resource | 0.738 ± 0.012 |
+| Stimulus | 0.502 ± 0.009 |
+| Motionless resource | 0.316 ± 0.010 |
+| **Resource** | 0.271 ± 0.009 |
+| Random resource | 0.132 ± 0.008 |
+| Time only | 0.026 ± 0.002 |
+
+**Verdict:**
+
+- **Emergence of a schema is not shown on this DQN.** The resource carries no more information about the window's column than a square left in place: it is lower in 4 of 5 subjects and equal in one. This does not contradict Piefke et al., who used another algorithm.
+- **The agent depends on the resource, but barely on where it moves it.** Removing the field drops tracking from 2.80 to −0.53. Replacing its column moves leaves 2.39 to 2.54.
+
+**A likely explanation that was not tested.** All actions in this variant move down, so the square's row equals the time step, and a parked square also keeps the starting column. An agent without memory gets a clock from the field for free. The random-action control keeps that clock too, so it cannot detect this. The same may apply to the large gap in Piefke et al. between removing the resource and randomizing its actions, but that is a supposition.
+
+**Limitations:** one noise level, 5 subjects, no agent without a resource at this length, and the combined probe has no motionless baseline.
+
+To reproduce: `npm run level0:emergence -- --conditions free --noise 0.5 --subjects 5 --iterations 6000 --eval-every 10 --workers 5 --out runs/emergence-6000`, about 6 hours.
