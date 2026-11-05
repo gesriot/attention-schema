@@ -22,6 +22,8 @@ export type Options = {
   conditions: Condition[];
   out: string | null;
 };
+// Single checkpoints swing widely under this training, so the summary averages the last ones.
+const tailPoints = 10;
 const conditionNames: Record<Condition, string> = {
   schema: "схема",
   none: "без схемы",
@@ -182,7 +184,7 @@ export function formatResults(results: TrainResult[]): string {
       );
     }
   }
-  lines.push("", "Итог · последняя точка · среднее ± стандартная ошибка по субъектам");
+  lines.push("", `Итог · последние ${tailPoints} точек · среднее ± стандартная ошибка по субъектам`);
   lines.push("Условие | Проверка | Слежение | Ловля");
   const format = (values: number[]) => {
     const { mean, error } = meanAndError(values);
@@ -192,13 +194,14 @@ export function formatResults(results: TrainResult[]): string {
     const subjects = ordered.filter((result) => result.condition === condition);
     if (subjects.length === 0) continue;
     for (const check of checksFor(condition)) {
-      const points = subjects.map(
-        (result) => result.points.filter((point) => point.check === check).at(-1)!,
+      const tails = subjects.map((result) =>
+        result.points.filter((point) => point.check === check).slice(-tailPoints),
       );
+      const subjectMeans = (key: "tracking" | "catching") =>
+        tails.map((points) => meanAndError(points.map((point) => point[key])).mean);
       lines.push(
         `${conditionNames[condition]} | ${checkNames[check]} | ` +
-          `${format(points.map((point) => point.tracking))} | ` +
-          `${format(points.map((point) => point.catching))}`,
+          `${format(subjectMeans("tracking"))} | ${format(subjectMeans("catching"))}`,
       );
     }
   }
