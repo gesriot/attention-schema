@@ -16,8 +16,17 @@ import {
 } from "./probes.ts";
 
 export const noiseGrid = [0, 0.25, 0.5, 0.75, 1];
-export const emergenceConditions = ["free", "given", "off", "clock", "start", "parked"] as const;
+export const emergenceConditions = [
+  "free",
+  "given",
+  "off",
+  "clock",
+  "start",
+  "parked",
+  "locked",
+] as const;
 export type EmergenceCondition = (typeof emergenceConditions)[number];
+export const resourceConditions = ["free", "locked"] as const;
 export type EmergenceSettings = { training: TrainingConfig; probes: ProbeConfig };
 export const publishedEmergence: EmergenceSettings = {
   training: { ...publishedTraining, sizes: [200, 200, 200, 200, 18] },
@@ -50,8 +59,12 @@ export function effectiveSubject(subject: number, noise: number): number {
   return subject + 100 * index;
 }
 
+function hasResource(condition: EmergenceCondition): boolean {
+  return condition === "free" || condition === "locked";
+}
+
 export function emergenceChecks(condition: EmergenceCondition): Check[] {
-  if (condition === "free") {
+  if (hasResource(condition)) {
     return ["normal", "resourceRandom", "resourceStill", "fieldOff", "windowOff"];
   }
   if (condition === "off") return ["normal", "windowOff"];
@@ -75,10 +88,13 @@ export function makeEmergenceJob(
     evalEvery,
     config: {
       ...settings.training,
-      sizes: [...settings.training.sizes.slice(0, -1), condition === "free" ? 18 : 6],
+      sizes: [...settings.training.sizes.slice(0, -1), hasResource(condition) ? 18 : 6],
     },
     environment: {
-      world: { variant: "piefke", schema: condition, noise, windowActive: true },
+      world:
+        condition === "locked"
+          ? { variant: "piefke", schema: "free", lockResource: true, noise, windowActive: true }
+          : { variant: "piefke", schema: condition, noise, windowActive: true },
       frames: 1,
       discount: 0.9,
     },
@@ -104,7 +120,7 @@ export function trainEmergence(
     onEvent,
   );
   const probes =
-    job.condition === "free"
+    hasResource(job.condition)
       ? runProbes(model, job.environment.world, subject, job.probes, onProbe)
       : [];
   return { condition: job.condition, noise: job.noise, subject: job.subject, points, probes };

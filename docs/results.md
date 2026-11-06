@@ -344,3 +344,22 @@ The noise grid was conditional on a positive result here, so it is not run.
 
 - The gains of `clock` and `parked` stand if each beats `off` by an effect.
 - The starting column adds something on its own if `start` beats `off` by an effect.
+
+## T1 replication
+
+Subjects 6 to 10, new seeds, settings and criteria registered in advance. Numbers are the mean of the last 10 tests.
+
+| Training | Tracking out of 4 | Catch out of 2 |
+| :-- | --: | --: |
+| Schema | 0.75 ± 0.07 | −0.28 ± 0.08 |
+| Commands | −0.66 ± 0.09 | −0.51 ± 0.03 |
+| No schema | −0.76 ± 0.08 | −0.43 ± 0.07 |
+
+| Paired difference in tracking | First run | Replication | 95% interval | All 10 subjects |
+| :-- | --: | --: | --: | --: |
+| Schema minus commands | 1.53 | 1.41 ± 0.14 | 1.02 to 1.79 | 1.47 ± 0.09 |
+| Commands minus no schema | 0.04 | 0.11 ± 0.11 | −0.20 to 0.42 | 0.07 ± 0.08 |
+
+**Verdict: the result replicates.** Both registered conditions are met on subjects that took no part in forming the hypothesis. Once the window slips, memory of commands is worth nothing measurable, and information about the actual window keeps its full value.
+
+**Limitations:** the upper end of the interval for commands minus no schema is 0.42 on the new subjects alone, so a small value of commands is not excluded there. On all 10 subjects the interval is −0.11 to 0.26. The schema is still given, not learned.

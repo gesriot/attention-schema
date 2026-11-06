@@ -65,3 +65,15 @@ test("slip is accepted only as a probability", () => {
   assert.equal(parseOptions([]).slip, undefined);
   for (const value of ["0", "1", "-0.1", "x"]) assert.throws(() => parseOptions(["--slip", value]));
 });
+
+test("a locked square keeps its row and moves only sideways", () => {
+  const config = { variant: "piefke", schema: "free", noise: 0.5, windowActive: true } as const;
+  const world = createWorld({ ...config, lockResource: true }, 7);
+  assert.equal(world.resource!.row, 4);
+  const col = world.resource!.col;
+  // Attention straight down, resource one column to the right.
+  stepWorld(world, 1);
+  assert.equal(world.resource!.row, 4);
+  assert.equal(world.resource!.col, Math.min(8, col + 1));
+  assert.equal(world.window.row, 2);
+});

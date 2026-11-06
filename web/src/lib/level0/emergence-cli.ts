@@ -9,6 +9,7 @@ import {
   makeEmergenceJob,
   noiseGrid,
   publishedEmergence,
+  resourceConditions,
   type EmergenceCondition,
   type EmergenceJob,
   type EmergenceResult,
@@ -27,6 +28,7 @@ const conditionNames: Record<EmergenceCondition, string> = {
   clock: "часы",
   start: "колонка старта",
   parked: "неподвижный квадрат",
+  locked: "квадрат без строки",
 };
 const sourceNames: Record<ProbeSource, string> = {
   resource: "ресурс",
@@ -144,37 +146,41 @@ export function formatEmergenceResults(results: EmergenceResult[]): string {
   lines.push(
     "", "Полезность ресурса · норма минус база · парные разности по субъектам",
   );
-  lines.push("Шум | База | Слежение | Ловля");
-  for (const noise of noiseGrid) {
-    const subjects = ordered.filter(
-      (result) => result.condition === "free" && result.noise === noise,
-    );
-    if (subjects.length === 0) continue;
-    for (const baseline of ["resourceRandom", "resourceStill"] as const) {
-      lines.push(
-        `${noise.toFixed(2)} | ${checkNames[baseline]} | ` +
-          `${format(resourceBenefits(subjects, "tracking", baseline))} | ` +
-          `${format(resourceBenefits(subjects, "catching", baseline))}`,
+  lines.push("Условие | Шум | База | Слежение | Ловля");
+  for (const condition of resourceConditions) {
+    for (const noise of noiseGrid) {
+      const subjects = ordered.filter(
+        (result) => result.condition === condition && result.noise === noise,
       );
+      if (subjects.length === 0) continue;
+      for (const baseline of ["resourceRandom", "resourceStill"] as const) {
+        lines.push(
+          `${conditionNames[condition]} | ${noise.toFixed(2)} | ${checkNames[baseline]} | ` +
+            `${format(resourceBenefits(subjects, "tracking", baseline))} | ` +
+            `${format(resourceBenefits(subjects, "catching", baseline))}`,
+        );
+      }
     }
   }
   lines.push("", "Зонды · проверочные эпизоды · доли · среднее ± стандартная ошибка по субъектам");
-  lines.push("Шум | Источник | Точность | Частый класс | Прирост над частым классом");
-  for (const noise of noiseGrid) {
-    const subjects = ordered.filter(
-      (result) => result.condition === "free" && result.noise === noise,
-    );
-    if (subjects.length === 0) continue;
-    for (const source of probeSources) {
-      const probes = subjects.map(
-        (result) => result.probes.find((probe) => probe.source === source)!,
+  lines.push("Условие | Шум | Источник | Точность | Частый класс | Прирост над частым классом");
+  for (const condition of resourceConditions) {
+    for (const noise of noiseGrid) {
+      const subjects = ordered.filter(
+        (result) => result.condition === condition && result.noise === noise,
       );
-      lines.push(
-        `${noise.toFixed(2)} | ${sourceNames[source]} | ` +
-          `${format(probes.map((probe) => probe.accuracy))} | ` +
-          `${format(probes.map((probe) => probe.majority))} | ` +
-          `${format(probes.map((probe) => probeLift(probe.accuracy, probe.majority)))}`,
-      );
+      if (subjects.length === 0) continue;
+      for (const source of probeSources) {
+        const probes = subjects.map(
+          (result) => result.probes.find((probe) => probe.source === source)!,
+        );
+        lines.push(
+          `${conditionNames[condition]} | ${noise.toFixed(2)} | ${sourceNames[source]} | ` +
+            `${format(probes.map((probe) => probe.accuracy))} | ` +
+            `${format(probes.map((probe) => probe.majority))} | ` +
+            `${format(probes.map((probe) => probeLift(probe.accuracy, probe.majority)))}`,
+        );
+      }
     }
   }
   lines.push("Стандартная ошибка при одном субъекте не определена (н/д).");

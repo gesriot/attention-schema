@@ -4,7 +4,12 @@ export type Variant = "wilterson" | "piefke";
 export type ActionSpace =
   | { variant: "wilterson"; schema: "given" | "off" | "commands" }
   | { variant: "piefke"; schema: "given" | "off" | "free" | "clock" | "start" | "parked" };
-export type WorldConfig = ActionSpace & { noise: number; windowActive: boolean; slip?: number };
+export type WorldConfig = ActionSpace & {
+  noise: number;
+  windowActive: boolean;
+  slip?: number;
+  lockResource?: boolean;
+};
 export type Position = { row: number; col: number };
 export type Action = { paddle: 0 | 1; attention: number; resource: number };
 export type World = {
@@ -22,6 +27,9 @@ export type World = {
   trackingScore: number;
   catchScore: number;
 };
+
+// A locked square holds only what its column says; its row cannot count time.
+const lockedRow = 4;
 
 // Each pair is (dcol, drow); order also defines the tie-break for policies.
 const moves = {
@@ -158,7 +166,10 @@ export function createWorld(config: WorldConfig, seed: number): World {
     ball: { row: 0, col: startCol },
     window,
     paddle: 4,
-    resource: config.schema === "free" ? { ...window } : null,
+    resource:
+      config.schema === "free"
+        ? { ...window, row: config.lockResource === true ? lockedRow : window.row }
+        : null,
     reward: 0,
     trackingScore: 0,
     catchScore: 0,
@@ -176,6 +187,7 @@ export function stepWorld(world: World, action: number): World {
   }
   if (world.resource !== null) {
     world.resource = moveWindow(world.resource, world.config.variant, command.resource);
+    if (world.config.lockResource === true) world.resource.row = lockedRow;
   }
   world.ball.col += Math.sign(world.landingCol - world.ball.col);
   world.paddle = movePaddle(world.paddle, command.paddle);
