@@ -118,7 +118,7 @@ Paired differences in the normal test, 5 subjects:
 
 - Training without a schema and with commands is still improving at the end: by 0.17 and 0.22 over the last 300 iterations, against 0.09 with the schema. The gap may shrink with longer training.
 - The conditions differ in form: the schema is given as a map aligned with the field, the command as an action number.
-- The corrected first frame probably raised the result without a schema: 1.13 against the authors' 0.34. The published gap may therefore be partly inflated by the first-frame bug. There was no full-length run with the bug, so this is a supposition.
+- The corrected first frame probably raised the result without a schema: 1.13 against the authors' 0.34. The published gap may therefore be partly inflated by the first-frame bug. Test T4 below confirms this. There was no full-length run with the bug, so this is a supposition.
 - 5 subjects. The best catch result is below the hand-written tracker: 1.04 against 1.78.
 
 To reproduce: `npm run level0:train -- --subjects 5 --iterations 1500 --eval-every 10 --workers 8 --out runs/level0`, about 6.5 hours on 8 threads.
@@ -271,3 +271,28 @@ The free resource minus `clock` in tracking is 0.05 ± 0.02, with a 95% interval
 
 - Equal scores do not prove that the free agent uses its resource as a clock, only that a clock is enough to explain them. The `start` and `parked` conditions and the probes bear on this.
 - The result holds for this level 0 setting, with one frame of input and a window that only moves down.
+
+## T4: first-frame bug at full length
+
+Exploratory, 5 subjects, 1500 iterations. The bug was reproduced in a temporary copy of the bench, which is not part of the repository. Numbers are the mean of the last 10 tests.
+
+| Measure | Authors | Bench with the bug | Bench without the bug |
+| :-- | --: | --: | --: |
+| Schema, tracking | 3.38 | 3.37 ± 0.04 | 3.57 ± 0.01 |
+| Schema, catch | 0.83 | 0.61 ± 0.06 | 1.04 ± 0.06 |
+| No schema, tracking | 0.34 | 0.29 ± 0.06 | 1.13 ± 0.06 |
+| No schema, catch | −0.26 | −0.36 ± 0.03 | −0.25 ± 0.04 |
+| Gap in tracking | 3.04 | 3.09 | 2.44 |
+
+With the bug, tracking without a schema falls by 0.84 ± 0.09, with a 95% interval of 0.60 to 1.07 by unpaired standard errors. Tracking with the schema falls by 0.20 ± 0.04.
+
+**Verdict: the published gap is inflated by the bug.** Reproducing it brings the bench to the authors' tracking numbers in both conditions. Fixing it removes 0.65 of the gap, about a fifth. The schema still wins by a wide margin, so the main finding of the paper stands at a smaller size.
+
+**Limitation:** the catch agrees less well with the authors than tracking does, with a difference of 0.22 with the schema.
+
+## Planned replication
+
+Registered before the run. T1 was exploratory, so it is repeated on subjects 6 to 10, whose seeds have not been used, with the same settings: slip probability 0.3, 1500 iterations, conditions schema, commands and none. Subjects 1 to 5 do not enter the verdict.
+
+- The result replicates if schema minus commands is an effect and commands minus no schema is below 0.3 in tracking.
+- It fails if either condition is not met.
