@@ -227,3 +227,28 @@ An effect means a paired difference in tracking of at least 0.3 whose 95% interv
 
 - The published gap is inflated by the bug if the no-schema result with the bug is at least 0.3 below the bench's 1.13, with an interval excluding zero by unpaired standard errors.
 - It is not if the two no-schema results differ by less than 0.3.
+
+## T1: window slips
+
+Exploratory, 5 subjects, 1500 iterations, slip probability 0.3. Numbers are the mean of the last 10 tests.
+
+| Training | Test | Tracking out of 4 | Catch out of 2 |
+| :-- | :-- | --: | --: |
+| Schema | Normal | 0.94 ± 0.06 | −0.23 ± 0.07 |
+| Schema | Schema off | −0.99 ± 0.04 | −0.45 ± 0.04 |
+| Commands | Normal | −0.59 ± 0.12 | −0.36 ± 0.07 |
+| Commands | Commands off | −0.62 ± 0.10 | −0.40 ± 0.08 |
+| No schema | Normal | −0.63 ± 0.07 | −0.39 ± 0.03 |
+
+| Paired difference in tracking | Value | 95% interval | Without slips |
+| :-- | --: | --: | --: |
+| Schema minus commands | 1.53 ± 0.13 | 1.16 to 1.90 | 1.81 |
+| Commands minus no schema | 0.04 ± 0.13 | −0.31 to 0.40 | 0.64 |
+
+**Verdict: the prediction is supported.** The schema keeps a large advantage, while command memory loses all its value once commands stop determining the focus. Turning the commands off changes nothing, which shows the network no longer relies on them.
+
+**Limitations:**
+
+- The schema here is a given, error-free map of the actual window, not a learned model. This shows that information about the actual state of attention matters, not that a model built by the agent provides it.
+- Training with the schema is still improving: 0.74 at iteration 1200 and 0.94 at 1500. The hand-written tracker that reads the schema field reaches 2.46.
+- The catch does not separate the conditions.
