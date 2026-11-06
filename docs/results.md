@@ -363,3 +363,39 @@ Subjects 6 to 10, new seeds, settings and criteria registered in advance. Number
 **Verdict: the result replicates.** Both registered conditions are met on subjects that took no part in forming the hypothesis. Once the window slips, memory of commands is worth nothing measurable, and information about the actual window keeps its full value.
 
 **Limitations:** the upper end of the interval for commands minus no schema is 0.42 on the new subjects alone, so a small value of commands is not excluded there. On all 10 subjects the interval is −0.11 to 0.26. The schema is still given, not learned.
+
+## T5: false schema
+
+Exploratory, 5 subjects, 2000 episodes per network. Training repeated the stored runs exactly on all 5 subjects. The measure is the change of the column command against the shift, in columns, so a positive value means compensation and a negative value means the command moves with the shift.
+
+| Shift of the field | Whole history | Latest frame only | Untrained, whole history |
+| --: | --: | --: | --: |
+| −3 | −0.10 ± 0.07 | −0.28 ± 0.04 | 0.01 ± 0.03 |
+| −2 | −0.15 ± 0.06 | −0.29 ± 0.03 | 0.01 ± 0.03 |
+| −1 | −0.10 ± 0.04 | −0.11 ± 0.02 | 0.01 ± 0.02 |
+| 1 | −0.18 ± 0.04 | −0.18 ± 0.02 | 0.01 ± 0.01 |
+| 2 | −0.28 ± 0.04 | −0.40 ± 0.04 | 0.02 ± 0.03 |
+| 3 | −0.24 ± 0.05 | −0.41 ± 0.05 | 0.02 ± 0.06 |
+
+One false step at step 5, with the shift through the whole history:
+
+| Shift | On target next step: clean | False | Tracking after it: clean | False |
+| --: | --: | --: | --: | --: |
+| −2 | 0.95 | 0.69 | 1.61 | 0.99 |
+| 2 | 0.96 | 0.74 | 1.63 | 1.13 |
+
+The untrained networks do not change on either measure.
+
+**Verdict: the registered prediction fails.** The measure is below 0.2 on both sides, so the command does not compensate for the false position. Its sign is the opposite of the prediction: at a shift of 2 the command follows the false square, significantly so for the latest frame on both sides and for the whole history at +2, with the interval at −2 including zero.
+
+The schema does act on control. One false step takes the window off the target in about a quarter of the cases where it was on it, and the loss continues on later steps. What fails is the idea of how it acts: the network does not behave as if it read a position from the field and steered by the difference.
+
+**An explanation found after the fact, not tested here.** The square also shows the network where the noise-free cells are. Under a false square lie noise cells that may read as a stimulus on the shifted side, and that would pull the command toward the shift. T8 tests this. The stronger effect for the latest frame may have a second source, a jump in the window's history read as motion.
+
+**Limitations:** the measure counts only column changes, one shift of 2 columns is outside what the window can do in one step when applied to the latest frame only, and the 95% interval at −2 for the whole history reaches zero.
+
+**Planned test T8. Why the command follows.** Registered before the run. The same subjects and seeds. The false square is shifted through the whole history as in T5, and the visual cells under it are blanked, except row 9 and the cells of the real window. Measured for shifts of 2 on each side, paired with T5's whole-history measure.
+
+- The explanation holds if blanking raises the measure by at least 0.2 on each side, with the 95% interval excluding zero.
+- It fails if the rise is below 0.2 on either side.
+- Compensation appears after all if the blanked measure is at least 0.2 on each side, with the 95% interval excluding zero.

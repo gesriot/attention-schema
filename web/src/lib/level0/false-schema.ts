@@ -3,7 +3,7 @@ import { appendFrame, greedyAction } from "./dqn.ts";
 import { attentionMoves, createWorld, decodeAction, stepWorld, type WorldConfig } from "./world.ts";
 
 export const falseShifts = [-3, -2, -1, 1, 2, 3] as const;
-export const falseScopes = ["history", "latest"] as const;
+export const falseScopes = ["history", "latest", "cleaned"] as const;
 export type FalseScope = (typeof falseScopes)[number];
 export type ShiftResult = {
   scope: FalseScope;
@@ -39,6 +39,9 @@ export function modelPolicy(model: Mlp): Act {
 }
 
 // Moves the window drawn in the field and nothing else. False if it would leave the grid.
+// "cleaned" also blanks the visual cells under the false square, except row 9 with the paddle,
+// so the noise there cannot pass for a stimulus. A ball that left the real window for that
+// area goes too, which is rare in a trained network.
 export function shiftField(
   source: Uint8Array,
   target: Uint8Array,
@@ -46,7 +49,7 @@ export function shiftField(
   scope: FalseScope,
 ): boolean {
   target.set(source);
-  const first = scope === "history" ? 0 : source.length - frameSize;
+  const first = scope === "latest" ? source.length - frameSize : 0;
   for (let offset = first; offset < source.length; offset += frameSize) {
     target.fill(0, offset + 100, offset + frameSize);
     for (let cell = 0; cell < 100; cell++) {
@@ -54,6 +57,12 @@ export function shiftField(
       const col = cell % 10;
       if (col + shift < 0 || col + shift > 9) return false;
       target[offset + 100 + cell + shift] = 1;
+    }
+    if (scope !== "cleaned") continue;
+    for (let cell = 0; cell < 90; cell++) {
+      if (target[offset + 100 + cell] === 1 && source[offset + 100 + cell] === 0) {
+        target[offset + cell] = 0;
+      }
     }
   }
   return true;

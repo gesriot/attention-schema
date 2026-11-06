@@ -8,7 +8,11 @@ import { runStoredJobs } from "./job-runner.ts";
 import { meanAndError } from "./train-cli.ts";
 import type { Progress } from "./training-progress.ts";
 
-const scopeNames = { history: "вся история", latest: "последний кадр" } as const;
+const scopeNames = {
+  history: "вся история",
+  latest: "последний кадр",
+  cleaned: "вся история без шума под квадратом",
+} as const;
 
 function format(values: number[]): string {
   const { mean, error } = meanAndError(values);

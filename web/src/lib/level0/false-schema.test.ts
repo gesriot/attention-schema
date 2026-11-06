@@ -34,6 +34,23 @@ test("the shift moves only the field and refuses to leave the grid", () => {
   assert.equal(shiftField(source, target, -3, "history"), false);
 });
 
+test("cleaning blanks the visual cells under the false square only", () => {
+  const source = new Uint8Array(size);
+  const frame = size - 200;
+  source[frame + 45] = 1;
+  source[frame + 43] = 1;
+  source[frame + 92] = 1;
+  source[frame + 100 + 43] = 1;
+  source[frame + 100 + 92] = 1;
+  const target = new Uint8Array(size);
+  assert.equal(shiftField(source, target, 2, "cleaned"), true);
+  assert.equal(target[frame + 45], 0);
+  assert.equal(target[frame + 43], 1);
+  assert.equal(target[frame + 94], 0);
+  assert.equal(target[frame + 92], 1);
+  assert.equal(target[frame + 100 + 45], 1);
+});
+
 test("a policy that ignores the field gives no directional effect", () => {
   const act: Act = () => 0;
   for (const row of probeFalseSchema(act, config, 20).shifts) {
