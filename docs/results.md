@@ -265,7 +265,7 @@ Exploratory, 5 subjects, noise 0.5, 6000 iterations, the seeds of the free resou
 
 The free resource minus `clock` in tracking is 0.05 ± 0.02, with a 95% interval of −0.02 to 0.11.
 
-**Verdict: the clock explanation is supported.** A field holding nothing but the time step does the job of the free resource: the difference is well below the 0.3 threshold. The gain of about 3.3 over the run with the resource off therefore does not show that the agent built a model of its attention. An agent that sees one frame cannot tell the time without help, and the square's row tells it.
+**Verdict: the clock explanation is supported.** A field holding nothing but the time step does the job of the free resource: the difference is well below the 0.3 threshold. The fall of about 3.3 when the field is switched off in testing therefore does not show that the agent built a model of its attention. An agent that sees one frame cannot tell the time without help, and the square's row tells it.
 
 **Limitations:**
 
@@ -312,3 +312,35 @@ Registered before the runs. Both are exploratory, with 5 subjects.
 - The resource is put to use if `locked` beats `start` by an effect, and also beats a motionless resource by an effect in the same network.
 - It is not if `locked` minus `start` is below 0.3. This would say nothing about longer training.
 - Probes of the window column are reported without a verdict.
+
+## T3: active use of the resource
+
+Exploratory, 5 subjects, noise 0.5, 6000 iterations, the seeds of the free resource run. The field in `parked` is what the free square shows when it is never moved sideways.
+
+| Field shows | Tracking out of 4 | Catch out of 2 |
+| :-- | --: | --: |
+| Starting column (`start`) | 2.04 ± 0.05 | −0.74 ± 0.05 |
+| Time step (`clock`) | 2.75 ± 0.05 | 0.44 ± 0.06 |
+| Both (`parked`) | 3.38 ± 0.04 | 0.41 ± 0.06 |
+| Free resource | 2.80 ± 0.03 | −0.23 ± 0.16 |
+
+| Paired difference in tracking | Value | 95% interval |
+| :-- | --: | --: |
+| Free resource minus `parked` | −0.59 ± 0.06 | −0.75 to −0.42 |
+| `parked` minus `clock` | 0.63 ± 0.08 | 0.42 to 0.84 |
+| Free resource minus `clock` | 0.05 ± 0.02 | −0.02 to 0.11 |
+
+**Verdict: active writing does not help.** A square that stays in place beats the one the agent controls by an effect. The agent scores less than it would by never moving the square sideways, and it does not collect the 0.63 that the starting column adds to the time step.
+
+**Limitations:**
+
+- The free agent chooses among 18 actions and `parked` among 6, and exploration moves the free square at random. Both make learning harder for the free agent, so this does not show that it could not get there with longer training.
+- `parked` is still rising: 3.29 at iteration 5000 and 3.38 at 6000.
+- No agent has yet been trained without any field at this length. The table has no floor, and the score of the network with the field switched off in testing is not one.
+
+The noise grid was conditional on a positive result here, so it is not run.
+
+**Planned test T7. Floor.** Registered before the run. Noise 0.5, 6000 iterations, the same seeds, trained with an empty field (`off`).
+
+- The gains of `clock` and `parked` stand if each beats `off` by an effect.
+- The starting column adds something on its own if `start` beats `off` by an effect.
