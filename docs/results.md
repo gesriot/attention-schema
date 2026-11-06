@@ -252,3 +252,22 @@ Exploratory, 5 subjects, 1500 iterations, slip probability 0.3. Numbers are the 
 - The schema here is a given, error-free map of the actual window, not a learned model. This shows that information about the actual state of attention matters, not that a model built by the agent provides it.
 - Training with the schema is still improving: 0.74 at iteration 1200 and 0.94 at 1500. The hand-written tracker that reads the schema field reaches 2.46.
 - The catch does not separate the conditions.
+
+## T2: clock
+
+Exploratory, 5 subjects, noise 0.5, 6000 iterations, the seeds of the free resource run. The field shows only the time step and carries nothing about the window or the target.
+
+| Test | Tracking out of 4 | Catch out of 2 |
+| :-- | --: | --: |
+| Normal | 2.75 ± 0.05 | 0.44 ± 0.06 |
+| Field off | −0.48 ± 0.03 | −0.79 ± 0.04 |
+| Window off | −0.57 ± 0.05 | −0.86 ± 0.01 |
+
+The free resource minus `clock` in tracking is 0.05 ± 0.02, with a 95% interval of −0.02 to 0.11.
+
+**Verdict: the clock explanation is supported.** A field holding nothing but the time step does the job of the free resource: the difference is well below the 0.3 threshold. The gain of about 3.3 over the run with the resource off therefore does not show that the agent built a model of its attention. An agent that sees one frame cannot tell the time without help, and the square's row tells it.
+
+**Limitations:**
+
+- Equal scores do not prove that the free agent uses its resource as a clock, only that a clock is enough to explain them. The `start` and `parked` conditions and the probes bear on this.
+- The result holds for this level 0 setting, with one frame of input and a window that only moves down.
