@@ -296,3 +296,19 @@ Registered before the run. T1 was exploratory, so it is repeated on subjects 6 t
 
 - The result replicates if schema minus commands is an effect and commands minus no schema is below 0.3 in tracking.
 - It fails if either condition is not met.
+
+## Planned tests of causal role and of emergence
+
+Registered before the runs. Both are exploratory, with 5 subjects.
+
+**T5. False schema.** Level 0 without slips, with the schema trained on subjects 1 to 5. Their seeds are reused and the curves must match the stored run. After training, on decisions 1 to 8 of 2000 new episodes, the schema in the input is moved sideways by 2 columns through the whole frame history, and nothing else changes. The measure, on the same decision, is the change of the column command against the shift, in columns. The real window, the frame and the network are untouched, so a change can only come from the schema. The same measure on each subject's untrained starting network is the control.
+
+- The schema steers attention if, for the shift to each side separately, the measure is at least 0.2 and its 95% interval excludes zero, and the paired difference from the untrained network meets the same two conditions.
+- It does not if the measure is below 0.2 on either side. Degradation without a direction does not count.
+- Shifts of 1 and 3 columns, a shift of the latest frame only, and the consequences of one false step at step 5 are reported without a verdict.
+
+**T6. Free resource without a free clock.** Noise 0.5, 6000 iterations, the seeds of the free resource run. The square stays on row 4 and moves only sideways, so it cannot count time by falling (`locked`). The comparison is `start` (2.04), where the same column information comes without any action.
+
+- The resource is put to use if `locked` beats `start` by an effect, and also beats a motionless resource by an effect in the same network.
+- It is not if `locked` minus `start` is below 0.3. This would say nothing about longer training.
+- Probes of the window column are reported without a verdict.
