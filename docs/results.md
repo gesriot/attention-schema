@@ -399,3 +399,20 @@ The schema does act on control. One false step takes the window off the target i
 - The explanation holds if blanking raises the measure by at least 0.2 on each side, with the 95% interval excluding zero.
 - It fails if the rise is below 0.2 on either side.
 - Compensation appears after all if the blanked measure is at least 0.2 on each side, with the 95% interval excluding zero.
+
+## T7: floor
+
+Exploratory, 5 subjects, noise 0.5, 6000 iterations, the seeds of the free resource run, trained with an empty field.
+
+Tracking is 0.91 ± 0.07 and the catch −0.65 ± 0.05. Paired differences from this floor:
+
+| Field shows | Tracking | 95% interval | Catch |
+| :-- | --: | --: | --: |
+| Starting column (`start`) | 1.13 ± 0.11 | 0.83 to 1.43 | −0.09 ± 0.10 |
+| Time step (`clock`) | 1.84 ± 0.11 | 1.52 to 2.15 | 1.09 ± 0.09 |
+| Free resource | 1.88 ± 0.10 | 1.61 to 2.16 | 0.42 ± 0.12 |
+| Both (`parked`) | 2.47 ± 0.04 | 2.35 to 2.58 | 1.07 ± 0.09 |
+
+**Verdict: the gains stand.** `clock`, `parked` and `start` each beat the floor by an effect. The real gain from the time step is about 1.8, not the 3.3 lost when the field is switched off in testing.
+
+**Limitation:** the floor is still rising fast, from 0.46 at iteration 5000 to 0.91 at 6000, so these gains are measured at one length of training and may shrink with a longer one.
