@@ -416,3 +416,28 @@ Tracking is 0.91 ± 0.07 and the catch −0.65 ± 0.05. Paired differences from 
 **Verdict: the gains stand.** `clock`, `parked` and `start` each beat the floor by an effect. The real gain from the time step is about 1.8, not the 3.3 lost when the field is switched off in testing.
 
 **Limitation:** the floor is still rising fast, from 0.46 at iteration 5000 to 0.91 at 6000, so these gains are measured at one length of training and may shrink with a longer one.
+
+## T6: free resource without a free clock
+
+Exploratory, 5 subjects, noise 0.5, 6000 iterations, the seeds of the free resource run.
+
+| Test of `locked` | Tracking out of 4 | Catch out of 2 |
+| :-- | --: | --: |
+| Normal | 1.31 ± 0.11 | −0.75 ± 0.02 |
+| Motionless resource | 1.29 ± 0.18 | −0.75 ± 0.01 |
+| Random resource actions | 1.02 ± 0.14 | −0.76 ± 0.02 |
+| Field off | −0.13 ± 0.09 | −0.80 ± 0.02 |
+
+| Paired difference in tracking | Value | 95% interval |
+| :-- | --: | --: |
+| `locked` minus `start` | −0.74 ± 0.07 | −0.94 to −0.54 |
+| `locked` minus motionless | 0.02 ± 0.07 | −0.18 to 0.22 |
+| `locked` minus the floor (T7) | 0.39 ± 0.15 | −0.02 to 0.81 |
+
+The probe of the window column gives a lift of 0.21 ± 0.05 from the agent's own square and 0.14 ± 0.04 from a motionless one, with a paired difference of 0.07 ± 0.03 and a 95% interval of −0.03 to 0.16.
+
+**Verdict: the resource is not put to use.** `locked` loses to `start`, where the same column comes without any action, and forcing the square to stay in place costs it nothing.
+
+**Limitations:** the agent has 18 actions against 6, and tracking is still rising, from 1.03 at iteration 5000 to 1.31 at 6000. This says nothing about longer training.
+
+Taken together, T2, T3 and T6 give no sign of a schema emerging in this agent within 6000 iterations. The field helps when something useful is written there for the agent, and the agent does not write it itself.
