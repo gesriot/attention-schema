@@ -14,7 +14,8 @@ import {
 } from "./replay.ts";
 import { createWorld, stepWorld, type World, type WorldConfig } from "./world.ts";
 
-export type Condition = "schema" | "none" | "commands" | "read" | "pool2" | "pool3" | "pool4";
+export type Condition =
+  "schema" | "none" | "commands" | "read" | "pool2" | "pool3" | "pool4" | "read2";
 export type Check = "normal" | "windowOff" | "fieldOff" | "resourceRandom" | "resourceStill";
 export const conditions: Condition[] = [
   "schema",
@@ -24,6 +25,7 @@ export const conditions: Condition[] = [
   "pool2",
   "pool3",
   "pool4",
+  "read2",
 ];
 const schemas = {
   schema: "given",
@@ -33,8 +35,9 @@ const schemas = {
   pool2: "given",
   pool3: "given",
   pool4: "given",
+  read2: "read",
 } as const;
-const pools: Partial<Record<Condition, number>> = { pool2: 2, pool3: 3, pool4: 4 };
+const pools: Partial<Record<Condition, number>> = { pool2: 2, pool3: 3, pool4: 4, read2: 2 };
 export type TrainingConfig = {
   sizes: number[];
   collectSteps: number;

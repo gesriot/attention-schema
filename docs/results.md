@@ -576,3 +576,14 @@ One false step at step 5, with the shift through the whole history:
 The field still acts on control: one false step costs about a sixth of the steps on target. So, as in T5 and T8, the network uses the field, but not as a position from which it steers by the difference with the target. What it reads there instead is not known.
 
 **Limitations:** without slips the window is on target on 0.95 of steps and under slips on about 0.53, so a measure built on single column commands is noisier here.
+
+## Planned test: frame and telemetry together
+
+Registered before the run. Under slips T9 left a gap of 0.46 between the given schema and one worked out from the frame and the agent's commands. The spec gives the schema one more input, telemetry, a coarse direct signal about attention, and requires that the position of attention follow from the inputs together but from none of them alone (F4).
+
+**T13.** Level 0, 5 subjects, 1500 iterations, slip probability 0.3, the seeds of the slip run. The estimate of T9 is searched only within the block of 2 by 2 window centres that holds the real window (`read2`), so the telemetry is the block of T11 with k = 2. Under hand-written and random policies the estimate matches the window on 0.89 to 0.90 of frames, against 0.79 to 0.81 without telemetry. Without slips both reach 0.99.
+
+Paired by subject with the given schema of the slip run, with the schema from the frame of T9, and with the block of 2 of T11. Each statement is judged on its own.
+
+- The sources add up if `read2` beats both the schema from the frame and the block of 2 by an effect.
+- The gap closes if the given schema minus `read2` is below 0.3.

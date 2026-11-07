@@ -134,3 +134,24 @@ test("a block of one is the given field", () => {
     assert.deepEqual(stepWorld(pooled, step % 8).frame, stepWorld(given, step % 8).frame);
   }
 });
+
+test("telemetry keeps the frame-read estimate inside the block that holds the window", () => {
+  const config = {
+    variant: "wilterson",
+    schema: "read",
+    noise: 0.5,
+    windowActive: true,
+    slip: 0.3,
+    pool: 2,
+  } as const;
+  const block = (value: number) => Math.floor((value - 1) / 2);
+  for (let seed = 1; seed <= 50; seed++) {
+    const world = createWorld(config, seed);
+    for (let step = 0; ; step++) {
+      assert.equal(block(world.estimate!.row), block(world.window.row));
+      assert.equal(block(world.estimate!.col), block(world.window.col));
+      if (world.t === 10) break;
+      stepWorld(world, (seed + step) % 8);
+    }
+  }
+});

@@ -129,28 +129,44 @@ function fillSquare(frame: Uint8Array, center: Position, offset: number, value: 
   }
 }
 
-// Centres are split into blocks of `size` along each axis; the field lights every cell that some
-// window of the block would cover, so it hides the place within the block.
+// Centres are split into blocks of `size` along each axis; this gives the first and last centre
+// of the block that holds `value`.
+function blockSpan(value: number, size: number): readonly [number, number] {
+  const first = 1 + Math.floor((value - 1) / size) * size;
+  return [first, Math.min(8, first + size - 1)];
+}
+
+// The field lights every cell that some window of the block would cover, so it hides the place
+// within the block.
 function fillPooled(frame: Uint8Array, center: Position, size: number): void {
-  const span = (value: number) => {
-    const first = 1 + Math.floor((value - 1) / size) * size;
-    return [first - 1, Math.min(8, first + size - 1) + 1] as const;
-  };
-  const [top, bottom] = span(center.row);
-  const [left, right] = span(center.col);
-  for (let row = top; row <= bottom; row++) {
-    frame.fill(1, 100 + row * 10 + left, 100 + row * 10 + right + 1);
+  const [top, bottom] = blockSpan(center.row, size);
+  const [left, right] = blockSpan(center.col, size);
+  for (let row = top - 1; row <= bottom + 1; row++) {
+    frame.fill(1, 100 + row * 10 + left - 1, 100 + row * 10 + right + 2);
   }
 }
 
 // The window worked out from the frame and the agent's own commands: of the blocks with at most
 // the ball lit, the one nearest the predicted position. On the first frame nothing is predicted,
-// so it looks on row 1 for a block with the ball at the middle of its top row.
-export function readWindow(frame: Uint8Array, predicted: Position | null): Position {
-  let best = predicted ?? { row: 1, col: 4 };
+// so it looks on row 1 for a block with the ball at the middle of its top row. Telemetry, a coarse
+// signal of the block that holds the window, limits the search to that block.
+export function readWindow(
+  frame: Uint8Array,
+  predicted: Position | null,
+  telemetry?: { center: Position; size: number },
+): Position {
+  const [top, bottom] =
+    telemetry === undefined ? [1, 8] : blockSpan(telemetry.center.row, telemetry.size);
+  const [left, right] =
+    telemetry === undefined ? [1, 8] : blockSpan(telemetry.center.col, telemetry.size);
+  const start = predicted ?? { row: 1, col: 4 };
+  let best = {
+    row: Math.max(top, Math.min(bottom, start.row)),
+    col: Math.max(left, Math.min(right, start.col)),
+  };
   let bestDistance = Infinity;
-  for (let row = 1; row <= (predicted === null ? 1 : 8); row++) {
-    for (let col = 1; col <= 8; col++) {
+  for (let row = top; row <= (predicted === null ? Math.min(1, bottom) : bottom); row++) {
+    for (let col = left; col <= right; col++) {
       let pixels = 0;
       for (let y = row - 1; y <= Math.min(8, row + 1); y++) {
         for (let x = col - 1; x <= col + 1; x++) pixels += frame[y * 10 + x]!;
@@ -184,7 +200,13 @@ function createFrame(world: Omit<World, "frame">, action: number | null = null):
         : moveWindow(
             world.estimate, world.config.variant, decodeAction(world.config, action).attention,
           );
-    world.estimate = readWindow(frame, predicted);
+    world.estimate = readWindow(
+      frame,
+      predicted,
+      world.config.pool === undefined
+        ? undefined
+        : { center: world.window, size: world.config.pool },
+    );
     fillSquare(frame, world.estimate, 100, 1);
   }
   if (world.resource !== null) fillSquare(frame, world.resource, 100, 1);

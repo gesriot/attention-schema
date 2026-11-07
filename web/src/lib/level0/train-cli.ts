@@ -25,6 +25,7 @@ const conditionNames: Record<Condition, string> = {
   pool2: "блок 2",
   pool3: "блок 3",
   pool4: "блок 4",
+  read2: "кадр и телеметрия 2",
 };
 const checkNames: Record<Check, string> = {
   normal: "норма",
