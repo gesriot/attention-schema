@@ -554,3 +554,25 @@ Registered before the run. T6 found the locked resource unused after 6000 iterat
 - It stays unused if the difference is below 0.3.
 
 The 6000-iteration results of `start` and `clock` are reference points, not criteria, because they would also rise with longer training. The probe lift from the agent's own square against a motionless one is reported alongside.
+
+## T10: false schema under slips
+
+Exploratory, 5 subjects, slip probability 0.3, 2000 episodes per network. Training repeated the stored slip runs exactly on all 5 subjects.
+
+| Shift of the field | Whole history | Noise blanked | 95% interval, blanked |
+| --: | --: | --: | --: |
+| −2 | −0.20 ± 0.06 | 0.08 ± 0.04 | −0.03..0.19 |
+| 2 | −0.15 ± 0.04 | −0.03 ± 0.04 | −0.15..0.09 |
+
+One false step at step 5, with the shift through the whole history:
+
+| Shift | On target next step: clean | False | Tracking after it: clean | False |
+| --: | --: | --: | --: | --: |
+| −2 | 0.52 | 0.44 | −0.23 | −0.38 |
+| 2 | 0.54 | 0.45 | −0.16 | −0.35 |
+
+**Verdict: compensation does not appear.** The blanked measure is below 0.2 on both sides and both intervals include zero. The command does not steer by the false square even when the field is the only reliable source of position.
+
+The field still acts on control: one false step costs about a sixth of the steps on target. So, as in T5 and T8, the network uses the field, but not as a position from which it steers by the difference with the target. What it reads there instead is not known.
+
+**Limitations:** without slips the window is on target on 0.95 of steps and under slips on about 0.53, so a measure built on single column commands is noisier here.
