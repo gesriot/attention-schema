@@ -587,3 +587,29 @@ Paired by subject with the given schema of the slip run, with the schema from th
 
 - The sources add up if `read2` beats both the schema from the frame and the block of 2 by an effect.
 - The gap closes if the given schema minus `read2` is below 0.3.
+
+## T11: coarse schemas
+
+Exploratory, 5 subjects, slip probability 0.3, the last 10 checkpoints. Paired with the stored slip runs of the same subjects.
+
+| Condition | Tracking | Catch |
+| :-- | --: | --: |
+| Given schema | 0.94 ± 0.06 | −0.23 ± 0.07 |
+| Block of 2 | 0.15 ± 0.08 | −0.55 ± 0.04 |
+| Block of 3 | 0.14 ± 0.10 | −0.52 ± 0.05 |
+| Block of 4 | −0.30 ± 0.04 | −0.53 ± 0.04 |
+| No schema | −0.63 ± 0.07 | −0.39 ± 0.03 |
+
+| Difference in tracking | Given minus block | 95% interval | Block minus no schema | 95% interval |
+| :-- | --: | --: | --: | --: |
+| Block of 2 | 0.79 ± 0.14 | 0.40..1.18 | 0.78 ± 0.08 | 0.56..1.00 |
+| Block of 3 | 0.80 ± 0.06 | 0.63..0.98 | 0.77 ± 0.14 | 0.37..1.16 |
+| Block of 4 | 1.24 ± 0.08 | 1.02..1.45 | 0.34 ± 0.07 | 0.15..0.52 |
+
+**Verdict: every block loses part of the advantage.** For each k the given schema beats the block by an effect, and the block beats no schema by an effect. Blocks of 2 and 3 keep about half of the given schema's 1.57 and the block of 4 about a fifth.
+
+Not registered: blocks of 2 and 3 do not differ, 0.01 (−0.46..0.48), and both beat the block of 4 by about 0.44, with intervals excluding zero. Even the block of 2 falls behind the schema from the frame of T9, by 0.33 (0.08..0.59).
+
+So under slips the control function needs the window to the cell. A schema that says only roughly where attention is helps, but much less. For the spec's telemetry this means a coarse block is a supplement to other sources and not a substitute for them, which T13 tests.
+
+**Limitations:** blocks of 3 split the 8 centres unevenly, into 3, 3 and 2, and the test was run only under slips.
