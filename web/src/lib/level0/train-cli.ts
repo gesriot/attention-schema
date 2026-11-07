@@ -22,6 +22,9 @@ const conditionNames: Record<Condition, string> = {
   none: "без схемы",
   commands: "команды",
   read: "схема из кадра",
+  pool2: "блок 2",
+  pool3: "блок 3",
+  pool4: "блок 4",
 };
 const checkNames: Record<Check, string> = {
   normal: "норма",

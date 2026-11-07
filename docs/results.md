@@ -485,3 +485,15 @@ Registered before the run. T8 leaves the command neither following nor compensat
 
 - Compensation appears if the measure is at least 0.2 on each side, with the 95% interval excluding zero.
 - It does not if the measure is below 0.2 on either side.
+
+## Planned test: how coarse the schema can be
+
+Registered before the run. The spec treats the schema as a caricature, and its telemetry pools the resource map by a block size k that is still open. No result so far says how much detail the control function needs.
+
+**T11.** Level 0, 5 subjects, 1500 iterations, slip probability 0.3, the seeds of the slip run. Window centres are split into blocks of k along each axis, and the field lights every cell that some window of the block would cover, for k of 2, 3 and 4. The field then says where attention is within 4, 3 or 2 blocks per axis, not the exact window.
+
+Each k is judged on its own, by paired differences in tracking with the stored schema and no-schema runs of the same subjects.
+
+- The advantage survives if the given schema minus the block is below 0.3 and the block beats no schema by an effect.
+- Part of it is lost if the given schema beats the block by an effect and the block beats no schema by an effect.
+- All of it is lost if the block does not beat no schema by an effect.

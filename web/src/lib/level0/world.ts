@@ -9,6 +9,7 @@ export type WorldConfig = ActionSpace & {
   windowActive: boolean;
   slip?: number;
   lockResource?: boolean;
+  pool?: number;
 };
 export type Position = { row: number; col: number };
 export type Action = { paddle: 0 | 1; attention: number; resource: number };
@@ -128,6 +129,20 @@ function fillSquare(frame: Uint8Array, center: Position, offset: number, value: 
   }
 }
 
+// Centres are split into blocks of `size` along each axis; the field lights every cell that some
+// window of the block would cover, so it hides the place within the block.
+function fillPooled(frame: Uint8Array, center: Position, size: number): void {
+  const span = (value: number) => {
+    const first = 1 + Math.floor((value - 1) / size) * size;
+    return [first - 1, Math.min(8, first + size - 1) + 1] as const;
+  };
+  const [top, bottom] = span(center.row);
+  const [left, right] = span(center.col);
+  for (let row = top; row <= bottom; row++) {
+    frame.fill(1, 100 + row * 10 + left, 100 + row * 10 + right + 1);
+  }
+}
+
 // The window worked out from the frame and the agent's own commands: of the blocks with at most
 // the ball lit, the one nearest the predicted position. On the first frame nothing is predicted,
 // so it looks on row 1 for a block with the ball at the middle of its top row.
@@ -161,7 +176,7 @@ function createFrame(world: Omit<World, "frame">, action: number | null = null):
   if (world.config.windowActive) fillSquare(frame, world.window, 0, 0);
   frame[world.ball.row * 10 + world.ball.col] = 1;
   frame.fill(1, 90 + world.paddle - 1, 90 + world.paddle + 2);
-  if (world.config.schema === "given") fillSquare(frame, world.window, 100, 1);
+  if (world.config.schema === "given") fillPooled(frame, world.window, world.config.pool ?? 1);
   if (world.config.schema === "read") {
     const predicted =
       world.estimate === null || action === null

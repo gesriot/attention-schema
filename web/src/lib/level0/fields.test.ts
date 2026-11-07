@@ -105,3 +105,32 @@ test("the frame-read schema draws only the estimate into the field", () => {
   for (let y = row - 1; y <= row + 1; y++) expected.fill(1, y * 10 + col - 1, y * 10 + col + 2);
   assert.deepEqual(Array.from(world.frame.slice(100)), Array.from(expected));
 });
+
+test("the pooled field shows the block of window positions and hides the place within it", () => {
+  const config = { variant: "wilterson", schema: "given", noise: 0.5, windowActive: true } as const;
+  const rows = (frame: Uint8Array) => {
+    const cells = field(frame).flatMap((lit, cell) => (lit === 1 ? [Math.floor(cell / 10)] : []));
+    return [Math.min(...cells), Math.max(...cells)];
+  };
+  const world = createWorld({ ...config, pool: 3 }, 5);
+  const seen = [rows(world.frame)];
+  for (let step = 0; step < 6; step++) seen.push(rows(stepWorld(world, 0).frame));
+  assert.deepEqual(seen, [
+    [0, 4],
+    [0, 4],
+    [0, 4],
+    [3, 7],
+    [3, 7],
+    [3, 7],
+    [6, 9],
+  ]);
+});
+
+test("a block of one is the given field", () => {
+  const config = { variant: "wilterson", schema: "given", noise: 0.5, windowActive: true } as const;
+  const given = createWorld(config, 5);
+  const pooled = createWorld({ ...config, pool: 1 }, 5);
+  for (let step = 0; step < 9; step++) {
+    assert.deepEqual(stepWorld(pooled, step % 8).frame, stepWorld(given, step % 8).frame);
+  }
+});
