@@ -441,3 +441,14 @@ The probe of the window column gives a lift of 0.21 ± 0.05 from the agent's own
 **Limitations:** the agent has 18 actions against 6, and tracking is still rising, from 1.03 at iteration 5000 to 1.31 at 6000. This says nothing about longer training.
 
 Taken together, T2, T3 and T6 give no sign of a schema emerging in this agent within 6000 iterations. The field helps when something useful is written there for the agent, and the agent does not write it itself.
+
+## Planned test: a schema the agent works out
+
+Registered before the run. Every schema so far was given by the experimenter, so the results do not show that an agent can supply the information itself.
+
+**T9. Schema from the frame.** Level 0, 5 subjects, 1500 iterations, without slips and at slip probability 0.3, the seeds of the earlier runs. The field shows an estimate instead of the true window (`read`). Of the blocks with at most the ball lit, the estimate is the one nearest the position predicted from the last estimate and the last command. The true window is not read. Under hand-written and random policies the estimate matches the window on 0.99 of frames without slips and on 0.79 to 0.81 with them.
+
+Each setting is judged on its own, by paired differences in tracking with the same subjects.
+
+- The advantage does not need outside information if the given schema minus `read` is below 0.3 and `read` beats no schema by an effect.
+- It does if the given schema beats `read` by an effect.

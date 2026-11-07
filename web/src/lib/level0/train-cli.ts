@@ -21,6 +21,7 @@ const conditionNames: Record<Condition, string> = {
   schema: "схема",
   none: "без схемы",
   commands: "команды",
+  read: "схема из кадра",
 };
 const checkNames: Record<Check, string> = {
   normal: "норма",

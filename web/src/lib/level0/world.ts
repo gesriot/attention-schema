@@ -2,7 +2,7 @@ import { createRng, nextInt, nextUnit, type Rng } from "../rng.ts";
 
 export type Variant = "wilterson" | "piefke";
 export type ActionSpace =
-  | { variant: "wilterson"; schema: "given" | "off" | "commands" }
+  | { variant: "wilterson"; schema: "given" | "off" | "commands" | "read" }
   | { variant: "piefke"; schema: "given" | "off" | "free" | "clock" | "start" | "parked" };
 export type WorldConfig = ActionSpace & {
   noise: number;
@@ -22,6 +22,7 @@ export type World = {
   window: Position;
   paddle: number;
   resource: Position | null;
+  estimate: Position | null;
   frame: Uint8Array;
   reward: number;
   trackingScore: number;
@@ -127,6 +128,32 @@ function fillSquare(frame: Uint8Array, center: Position, offset: number, value: 
   }
 }
 
+// The window worked out from the frame and the agent's own commands: of the blocks with at most
+// the ball lit, the one nearest the predicted position. On the first frame nothing is predicted,
+// so it looks on row 1 for a block with the ball at the middle of its top row.
+export function readWindow(frame: Uint8Array, predicted: Position | null): Position {
+  let best = predicted ?? { row: 1, col: 4 };
+  let bestDistance = Infinity;
+  for (let row = 1; row <= (predicted === null ? 1 : 8); row++) {
+    for (let col = 1; col <= 8; col++) {
+      let pixels = 0;
+      for (let y = row - 1; y <= Math.min(8, row + 1); y++) {
+        for (let x = col - 1; x <= col + 1; x++) pixels += frame[y * 10 + x]!;
+      }
+      if (pixels > 1) continue;
+      const distance =
+        predicted === null
+          ? 1 - frame[col]!
+          : Math.max(Math.abs(row - predicted.row), Math.abs(col - predicted.col));
+      if (distance < bestDistance) {
+        best = { row, col };
+        bestDistance = distance;
+      }
+    }
+  }
+  return best;
+}
+
 function createFrame(world: Omit<World, "frame">, action: number | null = null): Uint8Array {
   const frame = new Uint8Array(200);
   frame.set(createNoiseMask(world.rng.noise, world.config.noise));
@@ -135,6 +162,16 @@ function createFrame(world: Omit<World, "frame">, action: number | null = null):
   frame[world.ball.row * 10 + world.ball.col] = 1;
   frame.fill(1, 90 + world.paddle - 1, 90 + world.paddle + 2);
   if (world.config.schema === "given") fillSquare(frame, world.window, 100, 1);
+  if (world.config.schema === "read") {
+    const predicted =
+      world.estimate === null || action === null
+        ? null
+        : moveWindow(
+            world.estimate, world.config.variant, decodeAction(world.config, action).attention,
+          );
+    world.estimate = readWindow(frame, predicted);
+    fillSquare(frame, world.estimate, 100, 1);
+  }
   if (world.resource !== null) fillSquare(frame, world.resource, 100, 1);
   if (world.config.schema === "commands" && action !== null) frame[100 + action] = 1;
   // These fields hold what a square left in place shows, or one part of it.
@@ -170,11 +207,14 @@ export function createWorld(config: WorldConfig, seed: number): World {
       config.schema === "free"
         ? { ...window, row: config.lockResource === true ? lockedRow : window.row }
         : null,
+    estimate: null,
     reward: 0,
     trackingScore: 0,
     catchScore: 0,
   };
-  return { ...state, frame: createFrame(state) };
+  // Drawing the first frame also sets the first estimate.
+  const frame = createFrame(state);
+  return { ...state, frame };
 }
 
 export function stepWorld(world: World, action: number): World {

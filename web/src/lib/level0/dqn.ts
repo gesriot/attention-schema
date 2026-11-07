@@ -14,9 +14,10 @@ import {
 } from "./replay.ts";
 import { createWorld, stepWorld, type World, type WorldConfig } from "./world.ts";
 
-export type Condition = "schema" | "none" | "commands";
+export type Condition = "schema" | "none" | "commands" | "read";
 export type Check = "normal" | "windowOff" | "fieldOff" | "resourceRandom" | "resourceStill";
-export const conditions: Condition[] = ["schema", "none", "commands"];
+export const conditions: Condition[] = ["schema", "none", "commands", "read"];
+const schemas = { schema: "given", none: "off", commands: "commands", read: "read" } as const;
 export type TrainingConfig = {
   sizes: number[];
   collectSteps: number;
@@ -81,7 +82,7 @@ export function conditionConfig(
 ): WorldConfig {
   return {
     variant: "wilterson",
-    schema: condition === "schema" ? "given" : condition === "none" ? "off" : "commands",
+    schema: schemas[condition],
     noise: 0.5,
     windowActive,
     ...(slip === undefined ? {} : { slip }),

@@ -77,3 +77,31 @@ test("a locked square keeps its row and moves only sideways", () => {
   assert.equal(world.resource!.col, Math.min(8, col + 1));
   assert.equal(world.window.row, 2);
 });
+
+test("the frame-read schema follows the window without reading it", () => {
+  const config = { variant: "wilterson", schema: "read", noise: 0.5, windowActive: true } as const;
+  let exact = 0;
+  let frames = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    const world = createWorld(config, seed);
+    for (;;) {
+      frames++;
+      if (world.estimate!.row === world.window.row && world.estimate!.col === world.window.col) {
+        exact++;
+      }
+      if (world.t === 10) break;
+      stepWorld(world, (seed + world.t) % 16);
+    }
+  }
+  assert.ok(exact / frames > 0.95, `share ${exact / frames}`);
+});
+
+test("the frame-read schema draws only the estimate into the field", () => {
+  const config = { variant: "wilterson", schema: "read", noise: 0.5, windowActive: true } as const;
+  const world = createWorld(config, 11);
+  stepWorld(world, 1);
+  const { row, col } = world.estimate!;
+  const expected = new Uint8Array(100);
+  for (let y = row - 1; y <= row + 1; y++) expected.fill(1, y * 10 + col - 1, y * 10 + col + 2);
+  assert.deepEqual(Array.from(world.frame.slice(100)), Array.from(expected));
+});
