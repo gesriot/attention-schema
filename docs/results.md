@@ -452,3 +452,36 @@ Each setting is judged on its own, by paired differences in tracking with the sa
 
 - The advantage does not need outside information if the given schema minus `read` is below 0.3 and `read` beats no schema by an effect.
 - It does if the given schema beats `read` by an effect.
+
+## T8: why the command follows
+
+Exploratory, 5 subjects, 2000 episodes per network. Every whole-history and latest-frame record repeats T5 exactly. The measure is the one from T5, so a positive value means compensation.
+
+| Shift of the field | Whole history | Noise blanked | Rise | 95% interval of the rise |
+| --: | --: | --: | --: | --: |
+| −2 | −0.15 ± 0.06 | 0.13 ± 0.05 | 0.27 ± 0.05 | 0.13..0.41 |
+| 2 | −0.28 ± 0.04 | 0.07 ± 0.05 | 0.34 ± 0.04 | 0.23..0.46 |
+
+**Verdict: the explanation holds at the registered shifts, and compensation does not appear.** Blanking raises the measure by at least 0.2 on each side, with the interval excluding zero. The blanked measure stays below 0.2 and its intervals, −0.02..0.27 and −0.07..0.20, include zero. At a shift of 2 the pull toward the false square came mostly from the noise under it. Without that noise the command does not follow the square, and it does not reliably steer by it either.
+
+**Outside the registered shifts the explanation does not extend.** These numbers were not registered.
+
+| Shift of the field | Whole history | Noise blanked | Rise | 95% interval of the rise |
+| --: | --: | --: | --: | --: |
+| −3 | −0.10 ± 0.07 | −0.17 ± 0.06 | −0.07 ± 0.06 | −0.24..0.09 |
+| −1 | −0.10 ± 0.04 | 0.13 ± 0.02 | 0.23 ± 0.02 | 0.18..0.28 |
+| 1 | −0.18 ± 0.04 | 0.09 ± 0.02 | 0.27 ± 0.02 | 0.21..0.33 |
+| 3 | −0.24 ± 0.05 | −0.15 ± 0.08 | 0.09 ± 0.07 | −0.10..0.27 |
+
+A false square at 1, 2 and 3 columns adds 3, 6 and 9 cells to blank, and the rise does not grow with that number: at 3 it is gone. A shift of 3 is the only one where the false square does not overlap the real window. Why that matters is not known, so noise under the square is at best part of the explanation.
+
+**Limitations:** blanking also removes a ball that left the real window for that area, which is rare in a trained network, and the consequences of one false step were not measured with blanking.
+
+## Planned test: a false schema when the field is the only reliable source
+
+Registered before the run. T8 leaves the command neither following nor compensating. One reason may be that without slips the network also has the history of its own commands, so the field is one of two sources of position. Under slips that history misleads, and the field carries an advantage of 1.47 (T1).
+
+**T10.** Level 0, 5 subjects, 1500 iterations, slip probability 0.3, the seeds of the slip run, 2000 episodes per network. The shift is the one from T8, with the noise under the false square blanked, at 2 columns on each side.
+
+- Compensation appears if the measure is at least 0.2 on each side, with the 95% interval excluding zero.
+- It does not if the measure is below 0.2 on either side.
