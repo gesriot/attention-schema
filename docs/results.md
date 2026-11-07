@@ -497,3 +497,26 @@ Each k is judged on its own, by paired differences in tracking with the stored s
 - The advantage survives if the given schema minus the block is below 0.3 and the block beats no schema by an effect.
 - Part of it is lost if the given schema beats the block by an effect and the block beats no schema by an effect.
 - All of it is lost if the block does not beat no schema by an effect.
+
+## T9 without slips
+
+Exploratory, 5 subjects, the last 10 checkpoints. Paired with the stored runs of the same subjects.
+
+| Condition | Tracking | Catch |
+| :-- | --: | --: |
+| Given schema | 3.57 ± 0.01 | 1.04 ± 0.06 |
+| Schema from the frame | 3.49 ± 0.03 | 0.89 ± 0.07 |
+| Commands | 1.76 ± 0.06 | −0.25 ± 0.09 |
+| No schema | 1.13 ± 0.06 | −0.25 ± 0.04 |
+
+| Difference in tracking | Mean | 95% interval |
+| :-- | --: | --: |
+| Given minus from the frame | 0.08 ± 0.02 | 0.04..0.13 |
+| From the frame minus no schema | 2.36 ± 0.06 | 2.20..2.52 |
+| From the frame minus commands | 1.73 ± 0.05 | 1.58..1.87 |
+
+**Verdict without slips: the advantage does not need outside information.** The given schema leads by 0.08, below 0.3, although the interval excludes zero, and the schema from the frame beats no schema by 2.36.
+
+**What this adds.** Everything the estimate uses is in what the commands network already sees: ten frames and its own commands. That network gains 0.64 over no schema, and the same information worked into a position gains 2.36. The advantage comes from the work of turning the history into a position, not from information the agent lacks, and within 1500 iterations the network does not do that work itself.
+
+**Limitations:** the estimate is written by hand and is almost exact without slips, so the test shows the information is within the agent's reach, not that an agent can learn to extract it.
