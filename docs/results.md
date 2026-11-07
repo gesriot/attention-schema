@@ -520,3 +520,26 @@ Exploratory, 5 subjects, the last 10 checkpoints. Paired with the stored runs of
 **What this adds.** Everything the estimate uses is in what the commands network already sees: ten frames and its own commands. That network gains 0.64 over no schema, and the same information worked into a position gains 2.36. The advantage comes from the work of turning the history into a position, not from information the agent lacks, and within 1500 iterations the network does not do that work itself.
 
 **Limitations:** the estimate is written by hand and is almost exact without slips, so the test shows the information is within the agent's reach, not that an agent can learn to extract it.
+
+## T9 with slips
+
+Exploratory, 5 subjects, slip probability 0.3, the last 10 checkpoints. Paired with the stored slip runs of the same subjects.
+
+| Condition | Tracking | Catch |
+| :-- | --: | --: |
+| Given schema | 0.94 ± 0.06 | −0.23 ± 0.07 |
+| Schema from the frame | 0.48 ± 0.06 | −0.48 ± 0.06 |
+| Commands | −0.59 ± 0.12 | −0.36 ± 0.07 |
+| No schema | −0.63 ± 0.07 | −0.39 ± 0.03 |
+
+| Difference in tracking | Mean | 95% interval |
+| :-- | --: | --: |
+| Given minus from the frame | 0.46 ± 0.09 | 0.21..0.71 |
+| From the frame minus no schema | 1.11 ± 0.03 | 1.03..1.20 |
+| From the frame minus commands | 1.07 ± 0.12 | 0.73..1.42 |
+
+**Verdict with slips: the advantage needs outside information in part.** The given schema beats the schema from the frame by 0.46, an effect. The schema from the frame still beats no schema by 1.11, about 70% of the given schema's 1.57.
+
+Taken together, without slips the agent's own frames and commands are enough, and when attention also moves unbidden they fall short. The estimate then matches the window on about 0.8 of frames. The spec's telemetry, a direct coarse signal about attention, is the kind of source that would close this gap.
+
+**Limitations:** catch does not follow tracking under slips. The schema from the frame catches no better than no schema, −0.09 (−0.29..0.12), while without slips it gains 1.14 (1.02..1.25). The reason is not known.
