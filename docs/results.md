@@ -543,3 +543,14 @@ Exploratory, 5 subjects, slip probability 0.3, the last 10 checkpoints. Paired w
 Taken together, without slips the agent's own frames and commands are enough, and when attention also moves unbidden they fall short. The estimate then matches the window on about 0.8 of frames. The spec's telemetry, a direct coarse signal about attention, is the kind of source that would close this gap.
 
 **Limitations:** catch does not follow tracking under slips. The schema from the frame catches no better than no schema, −0.09 (−0.29..0.12), while without slips it gains 1.14 (1.02..1.25). The reason is not known.
+
+## Planned test: longer training of the locked resource
+
+Registered before the run. T6 found the locked resource unused after 6000 iterations, with tracking still rising, and said nothing about longer training.
+
+**T12.** Level 0, version B, 5 subjects, noise 0.5, 20000 iterations, the seeds of T6, so the first 6000 iterations should repeat it. The measure is the paired difference in tracking between `locked` and its own test with the resource held still, over the last 10 checkpoints. It needs no other condition trained as long.
+
+- The resource comes into use if the difference is at least 0.3, with the 95% interval excluding zero.
+- It stays unused if the difference is below 0.3.
+
+The 6000-iteration results of `start` and `clock` are reference points, not criteria, because they would also rise with longer training. The probe lift from the agent's own square against a motionless one is reported alongside.
