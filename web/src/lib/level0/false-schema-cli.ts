@@ -2,7 +2,12 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseTrainingOptions } from "./cli-options.ts";
 import { publishedTraining, type TrainJob } from "./dqn.ts";
-import { falseScopes, falseShifts, type FalseSchemaResult } from "./false-schema.ts";
+import {
+  consequenceScopes,
+  falseScopes,
+  falseShifts,
+  type FalseSchemaResult,
+} from "./false-schema.ts";
 import type { FalseSchemaRun } from "./false-schema-worker.ts";
 import { runStoredJobs } from "./job-runner.ts";
 import { meanAndError } from "./train-cli.ts";
@@ -12,6 +17,7 @@ const scopeNames = {
   history: "вся история",
   latest: "последний кадр",
   cleaned: "вся история без шума под квадратом",
+  carried: "вся история с видом окна под квадратом",
 } as const;
 
 function format(values: number[]): string {
@@ -36,13 +42,18 @@ function formatProbe(name: string, probes: FalseSchemaResult[]): string {
 
 function formatConsequences(name: string, probes: FalseSchemaResult[]): string {
   let text = "";
-  for (const shift of falseShifts) {
-    const rows = probes.map((probe) => probe.consequences.find((row) => row.shift === shift)!);
-    text +=
-      `${name} | ${shift.toFixed(0)} | ${format(rows.map((row) => row.focusClean))} | ` +
-      `${format(rows.map((row) => row.focusFalse))} | ` +
-      `${format(rows.map((row) => row.trackingClean))} | ` +
-      `${format(rows.map((row) => row.trackingFalse))}\n`;
+  for (const scope of consequenceScopes) {
+    for (const shift of falseShifts) {
+      const rows = probes.map(
+        (probe) => probe.consequences.find((row) => row.scope === scope && row.shift === shift)!,
+      );
+      text +=
+        `${name} | ${scopeNames[scope]} | ${shift.toFixed(0)} | ` +
+        `${format(rows.map((row) => row.focusClean))} | ` +
+        `${format(rows.map((row) => row.focusFalse))} | ` +
+        `${format(rows.map((row) => row.trackingClean))} | ` +
+        `${format(rows.map((row) => row.trackingFalse))}\n`;
+    }
   }
   return text;
 }
@@ -56,7 +67,8 @@ export function formatResults(runs: FalseSchemaRun[]): string {
     formatProbe("обученная", trained) +
     formatProbe("необученная", untrained) +
     "\nПоследствия одной подмены на шаге 5\n" +
-    "Сеть | Сдвиг поля | Фокус на цели: норма | подмена | Слежение дальше: норма | подмена\n" +
+    "Сеть | Подмена | Сдвиг поля | Фокус на цели: норма | подмена | " +
+    "Слежение дальше: норма | подмена\n" +
     formatConsequences("обученная", trained) +
     formatConsequences("необученная", untrained)
   );

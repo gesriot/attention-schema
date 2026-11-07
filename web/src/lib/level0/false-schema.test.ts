@@ -51,6 +51,21 @@ test("cleaning blanks the visual cells under the false square only", () => {
   assert.equal(target[frame + 100 + 45], 1);
 });
 
+test("carrying puts the real window's view under the false square", () => {
+  const source = new Uint8Array(size);
+  const frame = size - 200;
+  for (const cell of [33, 34, 35, 43, 44, 45, 53, 54, 55]) source[frame + 100 + cell] = 1;
+  source[frame + 44] = 1;
+  source[frame + 47] = 1;
+  source[frame + 37] = 1;
+  const target = new Uint8Array(size);
+  assert.equal(shiftField(source, target, 2, "carried"), true);
+  assert.equal(target[frame + 46], 1);
+  assert.equal(target[frame + 47], 0);
+  assert.equal(target[frame + 37], 0);
+  assert.equal(target[frame + 44], 1);
+});
+
 test("a policy that ignores the field gives no directional effect", () => {
   const act: Act = () => 0;
   for (const row of probeFalseSchema(act, config, 20).shifts) {
@@ -71,6 +86,6 @@ test("a policy steered by the field moves against the shift on both sides", () =
     assert.ok(row.decisions > 0);
     assert.ok(row.direction > 0, `${row.scope} ${row.shift}: ${row.direction}`);
   }
-  const shift = probe.consequences.find((row) => row.shift === 2)!;
+  const shift = probe.consequences.find((row) => row.scope === "history" && row.shift === 2)!;
   assert.ok(shift.episodes > 0);
 });

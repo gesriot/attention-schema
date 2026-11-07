@@ -613,3 +613,14 @@ Not registered: blocks of 2 and 3 do not differ, 0.01 (−0.46..0.48), and both 
 So under slips the control function needs the window to the cell. A schema that says only roughly where attention is helps, but much less. For the spec's telemetry this means a coarse block is a supplement to other sources and not a substitute for them, which T13 tests.
 
 **Limitations:** blocks of 3 split the 8 centres unevenly, into 3, 3 and 2, and the test was run only under slips.
+
+## Planned test: what the network reads from the field
+
+Registered before the run. T5, T8 and T10 show that the field acts on control without being read as a position. One reading is that the square tells the network where in the frame to look for the ball. Under a false square without noise it then finds nothing and acts as if it had lost the ball. If so, putting the real window's view under the false square should remove most of the loss. If any unfamiliar field simply disrupts the network, it should not.
+
+**T14.** Level 0, 5 subjects, 1500 iterations, no slips, the seeds of T8, 2000 episodes per network. One false step at step 5, with the field shifted by 2 columns on each side through the whole history. The visual cells under the false square are either blanked as in T8 or filled with what the real window shows, moved by the same shift (`carried`). The loss is the drop in the share of steps on target right after the false step. The recovery is the blanked loss minus the carried loss, paired by subject.
+
+- The square marks where to look if on each side the recovery is at least half the blanked loss, with the 95% interval of the recovery excluding zero.
+- It does not if on either side the recovery is below half the blanked loss.
+
+The whole-history, latest-frame and blanked records of the command should repeat T8 exactly.

@@ -3,8 +3,10 @@ import { appendFrame, greedyAction } from "./dqn.ts";
 import { attentionMoves, createWorld, decodeAction, stepWorld, type WorldConfig } from "./world.ts";
 
 export const falseShifts = [-3, -2, -1, 1, 2, 3] as const;
-export const falseScopes = ["history", "latest", "cleaned"] as const;
+export const falseScopes = ["history", "latest", "cleaned", "carried"] as const;
 export type FalseScope = (typeof falseScopes)[number];
+// The scopes whose one-step consequences are measured.
+export const consequenceScopes = ["history", "cleaned", "carried"] as const;
 export type ShiftResult = {
   scope: FalseScope;
   shift: number;
@@ -14,6 +16,7 @@ export type ShiftResult = {
   changed: number;
 };
 export type ConsequenceResult = {
+  scope: FalseScope;
   shift: number;
   episodes: number;
   focusClean: number;
@@ -41,7 +44,8 @@ export function modelPolicy(model: Mlp): Act {
 // Moves the window drawn in the field and nothing else. False if it would leave the grid.
 // "cleaned" also blanks the visual cells under the false square, except row 9 with the paddle,
 // so the noise there cannot pass for a stimulus. A ball that left the real window for that
-// area goes too, which is rare in a trained network.
+// area goes too, which is rare in a trained network. "carried" instead fills those cells with what
+// the real window shows, moved by the same shift, so the false square holds the window's view.
 export function shiftField(
   source: Uint8Array,
   target: Uint8Array,
@@ -58,11 +62,11 @@ export function shiftField(
       if (col + shift < 0 || col + shift > 9) return false;
       target[offset + 100 + cell + shift] = 1;
     }
-    if (scope !== "cleaned") continue;
+    if (scope === "history" || scope === "latest") continue;
     for (let cell = 0; cell < 90; cell++) {
-      if (target[offset + 100 + cell] === 1 && source[offset + 100 + cell] === 0) {
-        target[offset + cell] = 0;
-      }
+      if (target[offset + 100 + cell] === 0) continue;
+      if (scope === "carried") target[offset + cell] = source[offset + cell - shift]!;
+      else if (source[offset + 100 + cell] === 0) target[offset + cell] = 0;
     }
   }
   return true;
@@ -77,6 +81,7 @@ function playEpisode(
   config: WorldConfig,
   seed: number,
   shift: number | null,
+  scope: FalseScope,
 ): { focus: number; tracking: number } | null {
   const world = createWorld(config, seed);
   const observation = new Uint8Array(frameSize * 10);
@@ -87,7 +92,7 @@ function playEpisode(
   while (world.t < 10) {
     let input = observation;
     if (world.t === falseStep && shift !== null) {
-      if (!shiftField(observation, shifted, shift, "history")) return null;
+      if (!shiftField(observation, shifted, shift, scope)) return null;
       input = shifted;
     }
     const step = world.t;
@@ -131,31 +136,42 @@ export function probeFalseSchema(
     entry.direction /= entry.decisions;
     entry.changed /= entry.decisions;
   }
-  const consequences = falseShifts.map((shift) => {
-    const sum = {
-      shift,
-      episodes: 0,
-      focusClean: 0,
-      focusFalse: 0,
-      trackingClean: 0,
-      trackingFalse: 0,
-    };
-    for (let episode = 1; episode <= episodes; episode++) {
-      const lied = playEpisode(act, config, firstSeed + episode, shift);
-      if (lied === null) continue;
-      const clean = playEpisode(act, config, firstSeed + episode, null);
-      if (clean === null) throw new Error("Эпизод без подмены всегда завершается");
-      sum.episodes++;
-      sum.focusClean += clean.focus;
-      sum.focusFalse += lied.focus;
-      sum.trackingClean += clean.tracking;
-      sum.trackingFalse += lied.tracking;
-    }
-    sum.focusClean /= sum.episodes;
-    sum.focusFalse /= sum.episodes;
-    sum.trackingClean /= sum.episodes;
-    sum.trackingFalse /= sum.episodes;
-    return sum;
-  });
+  const consequences = consequenceScopes.flatMap((scope) =>
+    falseShifts.map((shift) => consequence(act, config, episodes, scope, shift)),
+  );
   return { shifts, consequences };
+}
+
+function consequence(
+  act: Act,
+  config: WorldConfig,
+  episodes: number,
+  scope: FalseScope,
+  shift: number,
+): ConsequenceResult {
+  const sum = {
+    scope,
+    shift,
+    episodes: 0,
+    focusClean: 0,
+    focusFalse: 0,
+    trackingClean: 0,
+    trackingFalse: 0,
+  };
+  for (let episode = 1; episode <= episodes; episode++) {
+    const lied = playEpisode(act, config, firstSeed + episode, shift, scope);
+    if (lied === null) continue;
+    const clean = playEpisode(act, config, firstSeed + episode, null, scope);
+    if (clean === null) throw new Error("Эпизод без подмены всегда завершается");
+    sum.episodes++;
+    sum.focusClean += clean.focus;
+    sum.focusFalse += lied.focus;
+    sum.trackingClean += clean.tracking;
+    sum.trackingFalse += lied.tracking;
+  }
+  sum.focusClean /= sum.episodes;
+  sum.focusFalse /= sum.episodes;
+  sum.trackingClean /= sum.episodes;
+  sum.trackingFalse /= sum.episodes;
+  return sum;
 }
