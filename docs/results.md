@@ -624,3 +624,27 @@ Registered before the run. T5, T8 and T10 show that the field acts on control wi
 - It does not if on either side the recovery is below half the blanked loss.
 
 The whole-history, latest-frame and blanked records of the command should repeat T8 exactly.
+
+## T13: frame and telemetry together
+
+Exploratory, 5 subjects, slip probability 0.3, the last 10 checkpoints. Paired with the earlier runs of the same subjects.
+
+| Condition | Tracking | Catch |
+| :-- | --: | --: |
+| Given schema | 0.94 ± 0.06 | −0.23 ± 0.07 |
+| Frame and telemetry (`read2`) | 0.77 ± 0.05 | −0.33 ± 0.07 |
+| Schema from the frame (T9) | 0.48 ± 0.06 | −0.48 ± 0.06 |
+| Block of 2 (T11) | 0.15 ± 0.08 | −0.55 ± 0.04 |
+| No schema | −0.63 ± 0.07 | −0.39 ± 0.03 |
+
+| Difference in tracking | Mean | 95% interval |
+| :-- | --: | --: |
+| `read2` minus the schema from the frame | 0.29 ± 0.09 | 0.04..0.53 |
+| `read2` minus the block of 2 | 0.62 ± 0.12 | 0.28..0.95 |
+| Given minus `read2` | 0.17 ± 0.05 | 0.02..0.32 |
+
+**Verdict: the gap closes, and the claim that the sources add up fails narrowly.** The given schema leads `read2` by 0.17, below 0.3. `read2` beats the block of 2 by an effect, but its gain over the schema from the frame, 0.29, is just below 0.3, so by the registered rule it is not an effect.
+
+Read with T9 and T11, the order is consistent: telemetry alone keeps about half of the advantage, the frame with commands about 70%, and both together about 90%. The estimate's accuracy rose from 0.8 to 0.9 with telemetry, and tracking followed it.
+
+**Limitations:** the telemetry here is exact within its block, without the noise the spec gives it, and the threshold decided the first statement by 0.01.
