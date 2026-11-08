@@ -665,3 +665,9 @@ Not registered: the pattern holds at every shift. The carried loss is 0.02 to 0.
 Together with T5, T8 and T10, the network uses the field to know where in the frame its view is clean, and reads the ball there. A false square without the view makes it act as if the ball were lost. It does not take a position from the field and steer by the error, so a false schema causes a loss and not a directional compensation. The spec's E2A expects a compensating shift, and this bench does not show one at level 0.
 
 **Limitations:** the carried view leaves the real ball visible outside the false square as well, so the network sees two balls on some frames.
+
+## Planned test: coarse schemas without slips
+
+Registered before the run. T11 was run only under slips, where the agent's own commands do not say where the window went. Without slips a coarse block and the command history together could fix the window exactly.
+
+**T15.** As T11, but without slips, with the seeds of the full run. Each k of 2, 3 and 4 is judged on its own against the stored given and no-schema runs of the same subjects, with the three statements of T11.
