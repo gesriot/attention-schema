@@ -648,3 +648,20 @@ Exploratory, 5 subjects, slip probability 0.3, the last 10 checkpoints. Paired w
 Read with T9 and T11, the order is consistent: telemetry alone keeps about half of the advantage, the frame with commands about 70%, and both together about 90%. The estimate's accuracy rose from 0.8 to 0.9 with telemetry, and tracking followed it.
 
 **Limitations:** the telemetry here is exact within its block, without the noise the spec gives it, and the threshold decided the first statement by 0.01.
+
+## T14: what the network reads from the field
+
+Exploratory, 5 subjects, 2000 episodes per network. All command records of T8 and its one-step consequences were repeated exactly.
+
+| Shift | Loss on target: blanked | Carried | Recovery | 95% interval of the recovery |
+| --: | --: | --: | --: | --: |
+| −2 | 0.26 ± 0.02 | 0.03 ± 0.00 | 0.24 ± 0.02 | 0.17..0.30 |
+| 2 | 0.24 ± 0.02 | 0.03 ± 0.01 | 0.21 ± 0.02 | 0.16..0.26 |
+
+**Verdict: the square marks where to look.** On each side the recovery is far above half the blanked loss and its interval excludes zero. With the real window's view under the false square, the share of steps on target drops by 0.03 instead of 0.24 to 0.26, and the loss of tracking over the rest of the episode falls from about 0.65 to about 0.08.
+
+Not registered: the pattern holds at every shift. The carried loss is 0.02 to 0.07 and the recovery is 0.08 to 0.24, all with intervals excluding zero. Under carrying the command still moves slightly with the shift, by 0.09 to 0.21 columns, also with intervals excluding zero.
+
+Together with T5, T8 and T10, the network uses the field to know where in the frame its view is clean, and reads the ball there. A false square without the view makes it act as if the ball were lost. It does not take a position from the field and steer by the error, so a false schema causes a loss and not a directional compensation. The spec's E2A expects a compensating shift, and this bench does not show one at level 0.
+
+**Limitations:** the carried view leaves the real ball visible outside the false square as well, so the network sees two balls on some frames.
