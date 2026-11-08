@@ -690,3 +690,27 @@ At 20000 iterations random resource actions cost 0.50 (0.33..0.66), and the prob
 The trend points toward use, though. Tracking rose from 1.31 to 2.32, and the advantage over the held square grew from 0.02 to about 0.2 by iteration 10000 and then changed little. Random resource actions hurt, but that shows only that the agent's actions on the square are not random, not that it reads the square back.
 
 **Limitations:** one length was run, tracking still rises slowly, from 2.21 to 2.32 over the last 5000 iterations, and the comparison conditions were not trained as long.
+
+## T15: coarse schemas without slips
+
+Exploratory, 5 subjects, no slips, the last 10 checkpoints. Paired with the stored full runs of the same subjects.
+
+| Condition | Tracking | Catch |
+| :-- | --: | --: |
+| Given schema | 3.57 ± 0.01 | 1.04 ± 0.06 |
+| Block of 2 | 3.15 ± 0.03 | 0.73 ± 0.03 |
+| Block of 3 | 2.85 ± 0.05 | 0.48 ± 0.07 |
+| Block of 4 | 2.50 ± 0.05 | 0.30 ± 0.14 |
+| No schema | 1.13 ± 0.06 | −0.25 ± 0.04 |
+
+| Difference in tracking | Given minus block | 95% interval | Block minus no schema | 95% interval |
+| :-- | --: | --: | --: | --: |
+| Block of 2 | 0.42 ± 0.03 | 0.32..0.51 | 2.03 ± 0.06 | 1.87..2.18 |
+| Block of 3 | 0.72 ± 0.05 | 0.58..0.85 | 1.73 ± 0.08 | 1.50..1.96 |
+| Block of 4 | 1.07 ± 0.06 | 0.90..1.25 | 1.37 ± 0.10 | 1.09..1.66 |
+
+**Verdict: every block loses part of the advantage, as under slips.** For each k the given schema beats the block by an effect, and the block beats no schema by an effect.
+
+Without slips the blocks keep more of the given schema's 2.45: about 83%, 71% and 56% for k of 2, 3 and 4, against about 50%, 49% and 21% under slips. Not registered: here each finer block beats the next coarser one, by 0.30 (0.12..0.48) and 0.36 (0.15..0.56). The block of 2 still falls behind the schema from the frame of T9, by 0.34 (0.20..0.47).
+
+So the agent's own commands make up for part of the lost detail when they are reliable, and much less when the window slips. In neither case does a coarse block replace the exact position.
