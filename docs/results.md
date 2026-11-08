@@ -687,6 +687,6 @@ At 20000 iterations random resource actions cost 0.50 (0.33..0.66), and the prob
 
 **Verdict: the resource stays unused.** The difference at 20000 iterations is 0.22, below 0.3, and its interval includes zero.
 
-The trend points the other way from T6. Tracking rose from 1.31 to 2.32, and the advantage over the held square grew from 0.02 to about 0.2 by iteration 10000 and then changed little. Random resource actions hurt, but that shows only that the agent's actions on the square are not random, not that it reads the square back.
+The trend points toward use, though. Tracking rose from 1.31 to 2.32, and the advantage over the held square grew from 0.02 to about 0.2 by iteration 10000 and then changed little. Random resource actions hurt, but that shows only that the agent's actions on the square are not random, not that it reads the square back.
 
 **Limitations:** one length was run, tracking still rises slowly, from 2.21 to 2.32 over the last 5000 iterations, and the comparison conditions were not trained as long.
