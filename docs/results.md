@@ -671,3 +671,22 @@ Together with T5, T8 and T10, the network uses the field to know where in the fr
 Registered before the run. T11 was run only under slips, where the agent's own commands do not say where the window went. Without slips a coarse block and the command history together could fix the window exactly.
 
 **T15.** As T11, but without slips, with the seeds of the full run. Each k of 2, 3 and 4 is judged on its own against the stored given and no-schema runs of the same subjects, with the three statements of T11.
+
+## T12: longer training of the locked resource
+
+Exploratory, 5 subjects, noise 0.5, 20000 iterations. The first 6000 iterations repeated T6 exactly on all 5 subjects. Each value is the mean of the 10 checkpoints up to the iteration shown.
+
+| Iteration | Normal | Resource held still | Normal minus still | 95% interval |
+| --: | --: | --: | --: | --: |
+| 6000 | 1.31 ± 0.11 | 1.29 ± 0.18 | 0.02 ± 0.07 | −0.17..0.22 |
+| 10000 | 1.86 ± 0.10 | 1.69 ± 0.12 | 0.18 ± 0.08 | −0.04..0.39 |
+| 15000 | 2.21 ± 0.09 | 2.01 ± 0.11 | 0.19 ± 0.08 | −0.04..0.43 |
+| 20000 | 2.32 ± 0.09 | 2.09 ± 0.11 | 0.22 ± 0.11 | −0.08..0.53 |
+
+At 20000 iterations random resource actions cost 0.50 (0.33..0.66), and the probe lift from the agent's own square is 0.25 ± 0.07 against 0.14 ± 0.02 from a motionless one, a paired difference of 0.11 (−0.11..0.33).
+
+**Verdict: the resource stays unused.** The difference at 20000 iterations is 0.22, below 0.3, and its interval includes zero.
+
+The trend points the other way from T6. Tracking rose from 1.31 to 2.32, and the advantage over the held square grew from 0.02 to about 0.2 by iteration 10000 and then changed little. Random resource actions hurt, but that shows only that the agent's actions on the square are not random, not that it reads the square back.
+
+**Limitations:** one length was run, tracking still rises slowly, from 2.21 to 2.32 over the last 5000 iterations, and the comparison conditions were not trained as long.
