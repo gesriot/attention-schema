@@ -738,3 +738,28 @@ Registered before the sweep. The spec allows the world's values to be refined on
 - F6 under the neutral policy: the target in focus on at most 30% of steps.
 
 Only the measurement noise, the enhancement, and the rate and strength of flashes are varied, in that order of preference, on the control seeds. The mechanism's own constants stay as they are unless no setting of these meets the conditions. Every setting tried is recorded.
+
+## Tuning of the target world
+
+All settings tried, 2000 episodes each on the control seeds, in the order tried. Unlisted values are the starting ones.
+
+| Setting | F2 | C0 | Flashes captured | Exits per episode | Command gap | Neutral in focus |
+| :-- | --: | --: | --: | --: | --: | --: |
+| Starting values | 0.789 | 0.460 | 0.69 | 2.53 | 0.88 | 0.15 |
+| σ_η 1.5 | 0.707 | 0.382 | 0.69 | 2.53 | 0.88 | 0.15 |
+| σ_η 2 | 0.644 | 0.350 | 0.69 | 2.53 | 0.88 | 0.15 |
+| σ_η 2, α 0.95 | 0.756 | 0.350 | 0.69 | 2.53 | 0.88 | 0.15 |
+| σ_η 1.5, flashes 0.05 | 0.746 | 0.382 | 0.67 | 2.49 | 0.73 | 0.15 |
+| σ_η 2, flashes 0.05 | 0.682 | 0.350 | 0.67 | 2.49 | 0.73 | 0.15 |
+| σ_η 2, flashes 0.05, α 0.95 | 0.799 | 0.350 | 0.67 | 2.49 | 0.73 | 0.15 |
+| σ_η 2, no flashes, α 0.95 | 0.892 | 0.350 | – | 2.34 | 0.47 | 0.17 |
+| σ_η 2, α 0.95, flashes 0.05, strength 0.5..1 | 0.868 | 0.350 | 0.37 | 2.54 | 0.56 | 0.16 |
+| σ_η 2, α 1, flashes 0.05 | 0.847 | 0.350 | 0.67 | 2.49 | 0.73 | 0.15 |
+| σ_η 2, α 0.95, flashes 0.05, strength 0.3..1 | 0.875 | 0.350 | 0.28 | 2.50 | 0.54 | 0.16 |
+| σ_η 2, α 1, flashes 0.05, strength 0.3..1 | 0.924 | 0.350 | 0.28 | 2.50 | 0.54 | 0.16 |
+| σ_η 2.5, α 0.95, flashes 0.05, strength 0.5..1 | 0.833 | 0.327 | 0.37 | 2.54 | 0.56 | 0.16 |
+| σ_η 2.5, α 0.95, flashes 0.05, strength 0.3..1 | 0.837 | 0.327 | 0.28 | 2.50 | 0.54 | 0.16 |
+
+**Chosen:** σ_η 2, α 0.95, flash probability 0.05, flash strength 0.5 to 1. It meets every condition with the fewest changes: F2 0.868, C0 0.350, 37% of flashes captured, 2.5 exits per episode, a gap of 0.56, the target in focus on 16% of steps under the neutral policy. The settings with α of 1 were set aside, because they make the focus noise-free. These are now the defaults. The mechanism's own constants did not change.
+
+**Limitations:** C0 sits exactly on its bound, and it is an ideal observer that takes the target's place and the time of the jump from the truth. An agent without attention would also have to find the target in the noise, so it would do worse.

@@ -95,7 +95,9 @@ test("measurement handles zero noise, fully enhanced cells and uniform C0 noise"
   const c0 = measure(defaults, frame, resource, false, createRng(2, 19));
   assert.deepEqual(c0, measure(defaults, frame, full, false, createRng(2, 19)));
   const rng = createRng(2, 19);
-  for (let i = 0; i < 512; i++) assert.equal(c0[i], frame[i]! + nextNormal(rng));
+  for (let i = 0; i < 512; i++) {
+    assert.equal(c0[i], frame[i]! + defaults.sigmaEta * nextNormal(rng));
+  }
   assert.notEqual(c0[71]! - frame[71]!, c0[327]! - frame[327]!);
 });
 
