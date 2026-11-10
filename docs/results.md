@@ -775,3 +775,39 @@ Registered before the run. Probes recover the center of the resource map, $\bar 
 Only the telemetry block size and noise are varied if it fails, as the spec says, and every setting tried is recorded. The current measurement $x_t$ is reported for reference and is not part of the conditions: its local noise shows the focus, which the spec leaves to control C7.
 
 In the spec, "frame history" is read here as the clean frames $I_t$. Read as $x_t$, the condition could not be met by any measurement in which attention lowers noise.
+
+## Control F4: first run
+
+`npm run target:f4 -- --episodes 2000`, seeds 6000000001 to 6000002000, probes trained on the first 1600 episodes and tested on the last 400.
+
+| Source | Mean error, cells | Within 1 cell |
+| :-- | --: | --: |
+| Clean frames | 6.61 | 0.04 |
+| Perception | 6.36 | 0.04 |
+| Commands | 7.77 | 0.03 |
+| Telemetry | 1.24 | 0.50 |
+| All schema inputs | 1.19 | 0.55 |
+| Time only | 8.50 | 0.02 |
+| Current measurement (reference) | 7.81 | 0.01 |
+
+**F4 fails on both conditions.** The schema's inputs together miss by 1.19 cells, more than 1, and telemetry alone already gives the position to 1.24 cells, less than 1.5. Commands and perception add almost nothing to telemetry.
+
+**Perception does not see the target.** `target:check` with perception: under the ideal policy's attention, slot 0 is within 1 cell of the target on 6% of steps and answers correctly in 0.231 of episodes, at chance; without enhancement 0.239. Two causes:
+
+- **The local noise estimate does not fit the focus.** The focus is about one cell with four weaker neighbours, smaller than the 3 × 3 neighbourhood, so the median sees mostly unattended noise. Under the ideal policy the target's signal-to-noise averages 1.85 without effort and 0.81 with effort, while the best background cell reaches 6.6, because a median of 8 values has heavy tails.
+- **The world leaves the target nearly invisible to anyone who must find it.** Even with the true noise map, slot 0 stays on the target on 48% of steps and answers 0.29. At σ_η 2 a detection threshold of 4 needs nearly the full resource on the cell. A slot that loses the target drifts away on its velocity and never searches again.
+
+The world was tuned on an observer that takes the target's position from the truth. C0 had to reach σ_η 2 because that observer averages the hue at a known cell. The agent sees the world only through perception, so for it the task is much harder. The perception and schema rows of this run say nothing yet. The telemetry row stands.
+
+## Planned: second tuning, through perception
+
+Registered before the sweep. The controls are now also run through perception: the attention commands and effort of the ideal policy, the paddle to slot 0's column, the answer from slot 0's hue on the last step. The readiness conditions, on the control seeds with 2000 episodes:
+
+- F2 with perception answers correctly in at least 0.75 of episodes.
+- C0 with perception answers correctly in at most 0.35 of episodes.
+- F2 with the ideal observer answers correctly in at least 0.85 of episodes.
+- The F6 conditions of the first tuning still hold.
+
+C0 with the ideal observer is reported for reference and is no longer a condition: it takes the target's position from the truth, which the agent never has.
+
+Varied: the measurement noise and enhancement, and the perception – its noise neighbourhood, detection threshold, a minimum brightness for detection, a new search by slot 0 after it loses its object, and its other parameters. The mechanism's own constants stay as they are unless no setting meets the conditions. Every setting tried is recorded. F4 is then run once at the chosen setting; if it fails, only the telemetry block size and noise are varied, as registered for F4.
