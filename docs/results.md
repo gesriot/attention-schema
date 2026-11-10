@@ -763,3 +763,15 @@ All settings tried, 2000 episodes each on the control seeds, in the order tried.
 **Chosen:** σ_η 2, α 0.95, flash probability 0.05, flash strength 0.5 to 1. It meets every condition with the fewest changes: F2 0.868, C0 0.350, 37% of flashes captured, 2.5 exits per episode, a gap of 0.56, the target in focus on 16% of steps under the neutral policy. The settings with α of 1 were set aside, because they make the focus noise-free. These are now the defaults. The mechanism's own constants did not change.
 
 **Limitations:** C0 sits exactly on its bound, and it is an ideal observer that takes the target's place and the time of the jump from the truth. An agent without attention would also have to find the target in the noise, so it would do worse.
+
+## Planned: control F4
+
+Registered before the run. Probes recover the center of the resource map, $\bar c_t$, from the history of one source under the neutral policy, as row and column classifiers. The measure is the mean distance in cells between the predicted cell and $\bar c_t$ on held-out episodes.
+
+- The schema's inputs together (perception summary, command history and telemetry) give the position if the error is at most 1 cell.
+- No single source gives it if the error of each of the clean frames, the perception summary, the command history and the telemetry is at least 1.5 cells.
+- F4 passes if both hold.
+
+Only the telemetry block size and noise are varied if it fails, as the spec says, and every setting tried is recorded. The current measurement $x_t$ is reported for reference and is not part of the conditions: its local noise shows the focus, which the spec leaves to control C7.
+
+In the spec, "frame history" is read here as the clean frames $I_t$. Read as $x_t$, the condition could not be met by any measurement in which attention lowers noise.
