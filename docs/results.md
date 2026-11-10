@@ -714,3 +714,27 @@ Exploratory, 5 subjects, no slips, the last 10 checkpoints. Paired with the stor
 Without slips the blocks keep more of the given schema's 2.45: about 83%, 71% and 56% for k of 2, 3 and 4, against about 50%, 49% and 21% under slips. Not registered: here each finer block beats the next coarser one, by 0.30 (0.12..0.48) and 0.36 (0.15..0.56). The block of 2 still falls behind the schema from the frame of T9, by 0.34 (0.20..0.47).
 
 So the agent's own commands make up for part of the lost detail when they are reliable, and much less when the window slips. In neither case does a coarse block replace the exact position.
+
+## Target mode: feasibility controls at the starting values
+
+`npm run target:check -- --episodes 2000`, seeds 5000000001 to 5000002000. The starting values are those of the specification step, not tuned.
+
+| Control | Correct answers | Catch |
+| :-- | --: | --: |
+| F2: ideal policy | 0.789 | 1.000 |
+| C0: no enhancement | 0.460 | 1.000 |
+
+Chance is 0.25. Catch in both controls follows the truth and only checks the paddle. F6 at the ideal policy: 69% of flashes captured, 2.5 exits of the target from the focus per episode, the target in focus on 60% of steps, a gap of 0.88 between the commanded and the actual center.
+
+C0 is well above chance, so there is too little noise, and F2 misses one answer in five.
+
+## Planned tuning of the target world
+
+Registered before the sweep. The spec allows the world's values to be refined only on the feasibility controls. The readiness conditions are fixed here:
+
+- F2 answers correctly in at least 0.85 of episodes.
+- C0 answers correctly in at most 0.35 of episodes.
+- F6 under the ideal policy: between 20% and 80% of flashes captured, at least 1 exit of the target from the focus per episode, and a mean gap of at least 0.3 between the commanded and the actual center.
+- F6 under the neutral policy: the target in focus on at most 30% of steps.
+
+Only the measurement noise, the enhancement, and the rate and strength of flashes are varied, in that order of preference, on the control seeds. The mechanism's own constants stay as they are unless no setting of these meets the conditions. Every setting tried is recorded.
