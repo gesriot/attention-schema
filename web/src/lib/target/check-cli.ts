@@ -50,6 +50,16 @@ const labels: Record<Parameter, string> = {
   captureThreshold: "Порог захвата",
   focusThreshold: "Порог фокуса",
   shiftThreshold: "Порог сдвига фокуса",
+  sigmaFloor: "Нижняя граница оценки шума",
+  gateRadius: "Радиус ворот слота",
+  detectThreshold: "Порог обнаружения",
+  velocityGain: "Коэффициент обновления скорости",
+  hueForget: "Сохранение веса оттенка",
+  maxMissed: "Пропусков до гашения слота 1",
+  f4Hidden: "Скрытых узлов зонда F4",
+  f4BatchSize: "Размер батча зонда F4",
+  f4Updates: "Обновлений зонда F4",
+  f4TrainFraction: "Доля обучающих эпизодов F4",
 };
 
 export type Options = { episodes: number; config: Config };
@@ -91,10 +101,15 @@ export function parseOptions(args: string[]): Options {
   return { episodes, config: configure(overrides) };
 }
 
-export function formatResults(options: Options, result: CheckResult): string {
+export function formatParameters(config: Config): string[] {
   const lines = ["Параметры", "Имя | Описание | Значение"];
   for (const name of parameters)
-    lines.push(`${name} | ${labels[name]} | ${options.config[name].toFixed(6)}`);
+    lines.push(`${name} | ${labels[name]} | ${config[name].toFixed(6)}`);
+  return lines;
+}
+
+export function formatResults(options: Options, result: CheckResult): string {
+  const lines = formatParameters(options.config);
   lines.push(
     "",
     `Контроли · эпизодов ${options.episodes.toFixed(0)} · зёрна ` +
@@ -106,6 +121,18 @@ export function formatResults(options: Options, result: CheckResult): string {
     lines.push(
       `${name} | ${control.correctRate.toFixed(6)} | ${control.catchRate.toFixed(6)} | ` +
         control.meanScore.toFixed(6),
+    );
+  }
+  lines.push(
+    "",
+    "Контроли с восприятием",
+    "Контроль | Доля верных ответов | Доля ловли | Доля шагов со слотом 0 рядом с целью",
+  );
+  for (const name of ["F2", "C0"] as const) {
+    const control = result.perception[name];
+    lines.push(
+      `${name} с восприятием | ${control.correctRate.toFixed(6)} | ` +
+        `${control.catchRate.toFixed(6)} | ${control.trackingRate.toFixed(6)}`,
     );
   }
   lines.push("", "F6 · события", "Показатель | Нейтральная политика | Идеальная политика");

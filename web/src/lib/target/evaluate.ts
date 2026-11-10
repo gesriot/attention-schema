@@ -3,6 +3,7 @@ import { commandedCenter, distance, resourceShare } from "./attention.ts";
 import { applyAction, createEpisode, type Action, type Score, type Truth } from "./episode.ts";
 import { createIdealPolicy, createNeutralPolicy } from "./policies.ts";
 import { isOccluded, type Position } from "./world.ts";
+import { checkPerception, type PerceptionControls } from "./perception-controls.ts";
 
 export type EventCounts = {
   episodes: number;
@@ -130,6 +131,7 @@ export type CheckResult = {
   C0: ControlSummary;
   neutral: EventSummary;
   ideal: EventSummary;
+  perception: PerceptionControls;
 };
 
 function addCounts(total: EventCounts, counts: EventCounts): void {
@@ -185,5 +187,11 @@ export function checkTarget(config: Config, episodes: number): CheckResult {
     total.catchRate /= episodes;
     total.meanScore /= episodes;
   }
-  return { F2, C0, neutral: summarizeEvents(neutralCounts), ideal: summarizeEvents(idealCounts) };
+  return {
+    F2,
+    C0,
+    neutral: summarizeEvents(neutralCounts),
+    ideal: summarizeEvents(idealCounts),
+    perception: checkPerception(config, episodes),
+  };
 }

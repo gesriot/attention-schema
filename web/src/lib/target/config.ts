@@ -39,6 +39,16 @@ export const defaults = {
   captureThreshold: 0.3,
   focusThreshold: 0.5,
   shiftThreshold: 1,
+  sigmaFloor: 0.05,
+  gateRadius: 2,
+  detectThreshold: 4,
+  velocityGain: 0.5,
+  hueForget: 0.5,
+  maxMissed: 3,
+  f4Hidden: 200,
+  f4BatchSize: 100,
+  f4Updates: 2000,
+  f4TrainFraction: 0.8,
 };
 
 export type Config = typeof defaults;
@@ -54,6 +64,8 @@ export const streams = {
   measurement: 19,
   telemetry: 20,
   policy: 21,
+  probeRow: 22,
+  probeCol: 23,
 };
 
 export function validateConfig(config: Config): void {
@@ -81,6 +93,11 @@ export function validateConfig(config: Config): void {
     "catchRadius",
     "k",
     "resourceRadius",
+    "gateRadius",
+    "maxMissed",
+    "f4Hidden",
+    "f4BatchSize",
+    "f4Updates",
   ] as const) {
     if (!Number.isSafeInteger(config[name])) fail(name);
   }
@@ -114,13 +131,25 @@ export function validateConfig(config: Config): void {
     "effortThreshold",
     "captureThreshold",
     "focusThreshold",
+    "velocityGain",
+    "hueForget",
   ] as const) {
     if (config[name] > 1) fail(name);
   }
   if (config.rho >= 1) fail("rho");
-  for (const name of ["R", "tau0", "sigmaB"] as const) {
+  for (const name of [
+    "R",
+    "tau0",
+    "sigmaB",
+    "sigmaFloor",
+    "maxMissed",
+    "f4Hidden",
+    "f4BatchSize",
+    "f4Updates",
+  ] as const) {
     if (config[name] <= 0) fail(name);
   }
+  if (config.f4TrainFraction <= 0 || config.f4TrainFraction >= 1) fail("f4TrainFraction");
   if (config.R > config.fieldSize * config.fieldSize) fail("R");
 }
 

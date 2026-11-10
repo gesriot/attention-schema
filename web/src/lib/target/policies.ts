@@ -27,6 +27,22 @@ export function hueCategory(config: Config, hue: number): number {
   return clamp(Math.floor(hue * config.hueCategories), 0, config.hueCategories - 1);
 }
 
+export function idealAttentionAction(
+  config: Config,
+  truth: Truth,
+): Pick<Action, "command" | "effort"> {
+  const { world, attention } = truth;
+  const target = world.target;
+  // The specified forecast is position + velocity, without sampling the next motion.
+  // Math.round resolves half-integer ties toward +Infinity, before clamping the command.
+  const row = clamp(Math.round(target.row + target.velocity.row - attention.center.row), -1, 1);
+  const col = clamp(Math.round(target.col + target.velocity.col - attention.center.col), -1, 1);
+  return {
+    command: { row: row as Move, col: col as Move },
+    effort: resourceShare(config, attention, target) < config.effortThreshold ? 1 : 0,
+  };
+}
+
 export function createIdealPolicy(config: Config, enhanced = true): IdealPolicy {
   let weightedHue = 0;
   let weightSum = 0;
@@ -49,13 +65,8 @@ export function createIdealPolicy(config: Config, enhanced = true): IdealPolicy 
         weightSum += weight;
       }
     }
-    // The specified forecast is position + velocity, without sampling the next motion.
-    // Math.round resolves half-integer ties toward +Infinity, before clamping the command.
-    const row = clamp(Math.round(target.row + target.velocity.row - attention.center.row), -1, 1);
-    const col = clamp(Math.round(target.col + target.velocity.col - attention.center.col), -1, 1);
     const action: Action = {
-      command: { row: row as Move, col: col as Move },
-      effort: resourceShare(config, attention, target) < config.effortThreshold ? 1 : 0,
+      ...idealAttentionAction(config, truth),
       paddleMove: Math.sign(target.col - observation.paddle) as Move,
     };
     if (world.t === config.episodeSteps) {
