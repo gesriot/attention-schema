@@ -1,6 +1,7 @@
 node_modules/
 dist/
 target/
+!/web/src/lib/target/
 .DS_Store
 *.log
 coherence-lab/

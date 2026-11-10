@@ -25,6 +25,7 @@ npm run level0:check   # level 0: manual checks of the environment
 npm run level0:train   # level 0: DQN training
 npm run level0:emergence   # level 0: schema emergence (E6)
 npm run level0:false-schema   # level 0: false schema with attention intact (E2A)
+npm run target:check   # target mode: feasibility controls C0, F2 and F6
 ```
 
 Command output is in Russian.

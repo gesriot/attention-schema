@@ -11,7 +11,8 @@
     "level0:check": "node src/lib/level0/check-cli.ts",
     "level0:train": "node src/lib/level0/train-cli.ts",
     "level0:emergence": "node src/lib/level0/emergence-cli.ts",
-    "level0:false-schema": "node src/lib/level0/false-schema-cli.ts"
+    "level0:false-schema": "node src/lib/level0/false-schema-cli.ts",
+    "target:check": "node src/lib/target/check-cli.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
