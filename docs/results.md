@@ -955,3 +955,19 @@ Confirming runs with the quartile scaled by 1/0.3186, rs mb vg 0.25 g3 θ10, 200
 | 0.3 | 0.750 / 0.254 (0.791) |
 
 </details>
+
+## F4: telemetry grid with the first perception
+
+Run ahead of the registered order, on a copy of the code with the first perception and the first world, to see what the telemetry alone can do. The telemetry depends only on the resource map and its own noise, not on the measurement or the perception, so its rows stand. The schema rows include the first perception, which sees almost nothing, and are a preview. The frames, perception and commands rows do not depend on the telemetry and are as in the first run.
+
+| Block k | Noise σ_ν | Telemetry, cells | All schema inputs, cells |
+| --: | --: | --: | --: |
+| 4 | 0.5 | 1.24 | 1.19 |
+| 4 | 1 | 1.61 | 1.55 |
+| 4 | 2 | 2.40 | 2.31 |
+| 4 | 4 | 4.35 | 3.99 |
+| 2 | 0.5 | 1.27 | 1.32 |
+| 8 | 0.5 | 2.96 | 2.46 |
+| 16 | 0.5 | 7.87 | 6.25 |
+
+The first row is the first F4 run. No setting has the telemetry at 1.5 or more and the schema's inputs at 1 or less. The probe of all schema inputs barely improves on the telemetry: by 0.05 to 0.09 cells while the telemetry is informative, and by 0.5 to 1.6 cells only when the telemetry is weak, which is still far from 1. A probe that sees the command history does not integrate it into a position. With the first perception there is nothing to anchor the integration to; the second perception, which finds the target at the start, may change this.
