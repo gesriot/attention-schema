@@ -46,9 +46,9 @@ export const defaults = {
   minBrightness: 0.65,
   hueForget: 0.5,
   maxMissed: 3,
-  f4Hidden: 200,
-  f4BatchSize: 100,
-  f4Updates: 2000,
+  f4Hidden: 64,
+  f4BatchSize: 32,
+  f4Updates: 6000,
   f4TrainFraction: 0.8,
 };
 
@@ -65,8 +65,8 @@ export const streams = {
   measurement: 19,
   telemetry: 20,
   policy: 21,
-  probeRow: 22,
-  probeCol: 23,
+  probe: 22,
+  // Stream 23 is retired; do not reuse it.
   falseAlarm: 24,
 };
 

@@ -16,16 +16,20 @@ export async function runProbes(
   corpus: Corpus,
   workers: number,
   onProgress?: (progress: WorkerProgress) => void,
+  selected: readonly Source[] = sources,
 ): Promise<ProbeResult[]> {
   if (!Number.isSafeInteger(workers) || workers < 1)
     throw new Error("Нужно положительное число потоков");
-  const results: ProbeResult[] = new Array(sources.length);
+  const ordered = sources.filter((source) => selected.includes(source));
+  if (ordered.length === 0 || selected.some((source) => !sources.includes(source)))
+    throw new Error("Нужен непустой список известных источников");
+  const results: ProbeResult[] = new Array(ordered.length);
   const active = new Set<Worker>();
   let next = 0;
   const consume = async () => {
-    while (next < sources.length) {
+    while (next < ordered.length) {
       const index = next++;
-      const source = sources[index]!;
+      const source = ordered[index]!;
       results[index] = await new Promise<ProbeResult>((resolveResult, reject) => {
         const worker = new Worker(new URL("./f4-worker.ts", import.meta.url), {
           workerData: { config, data: probeData(config, corpus, source), source },
@@ -52,10 +56,10 @@ export async function runProbes(
     }
   };
   try {
-    await Promise.all(Array.from({ length: Math.min(workers, sources.length) }, consume));
+    await Promise.all(Array.from({ length: Math.min(workers, ordered.length) }, consume));
     return results;
   } catch (error) {
-    next = sources.length;
+    next = ordered.length;
     await Promise.all([...active].map((worker) => worker.terminate()));
     throw error;
   }

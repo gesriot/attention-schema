@@ -57,8 +57,8 @@ const labels: Record<Parameter, string> = {
   minBrightness: "Минимальная яркость обнаружения",
   hueForget: "Сохранение веса оттенка",
   maxMissed: "Пропусков до гашения слота 1",
-  f4Hidden: "Скрытых узлов зонда F4",
-  f4BatchSize: "Размер батча зонда F4",
+  f4Hidden: "Узлов состояния зонда F4",
+  f4BatchSize: "Эпизодов в батче зонда F4",
   f4Updates: "Обновлений зонда F4",
   f4TrainFraction: "Доля обучающих эпизодов F4",
 };

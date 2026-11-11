@@ -1,6 +1,14 @@
 import { adamStep, createAdam } from "../nn/adam.ts";
-import { createBatch, createMlp, crossEntropyGradient, forward } from "../nn/mlp.ts";
-import { createRng, nextInt } from "../rng.ts";
+import {
+  bindGru,
+  createGru,
+  createGruBatch,
+  forwardGru,
+  backwardGru,
+  type Gru,
+  type GruBatch,
+} from "../nn/gru.ts";
+import { createRng, nextInt, nextUnit, type Rng } from "../rng.ts";
 import { streams, type Config } from "./config.ts";
 import { applyAction, createEpisode, type Observation } from "./episode.ts";
 import { createNeutralPolicy } from "./policies.ts";
@@ -17,7 +25,6 @@ export const sources = [
   "measurement",
 ] as const;
 export type Source = (typeof sources)[number];
-export type Axis = "row" | "col";
 export type Corpus = {
   episodes: number;
   steps: number;
@@ -59,7 +66,11 @@ export function splitEpisodes(config: Config, episodes: number): { train: number
   return { train, test: episodes - train };
 }
 
-export function collectCorpus(config: Config, episodes: number): Corpus {
+export function collectCorpus(
+  config: Config,
+  episodes: number,
+  selected: readonly Source[] = sources,
+): Corpus {
   splitEpisodes(config, episodes);
   if (config.fieldSize > 256) throw new Error("Метки зондов допускают не более 256 классов");
   const steps = config.episodeSteps;
@@ -72,11 +83,11 @@ export function collectCorpus(config: Config, episodes: number): Corpus {
     steps,
     cells,
     telemetryWidth,
-    frames: sharedFloats(samples * cells * 2),
+    frames: sharedFloats(selected.includes("frames") ? samples * cells * 2 : 0),
     perception: sharedFloats(samples * 18),
     commands: sharedFloats(samples * 10),
     telemetry: sharedFloats(samples * telemetryWidth),
-    measurement: sharedFloats(samples * cells * 2),
+    measurement: sharedFloats(selected.includes("measurement") ? samples * cells * 2 : 0),
     centers: sharedFloats(samples * 2),
     rowLabels: new Uint8Array(new SharedArrayBuffer(samples)),
     colLabels: new Uint8Array(new SharedArrayBuffer(samples)),
@@ -90,8 +101,10 @@ export function collectCorpus(config: Config, episodes: number): Corpus {
       const sample = index * steps + step;
       const observation = episode.observation;
       perception = updatePerception(config, perception, observation.measurement);
-      corpus.frames.set(episode.truth.world.frame, sample * cells * 2);
-      corpus.measurement.set(observation.measurement, sample * cells * 2);
+      if (corpus.frames.length > 0)
+        corpus.frames.set(episode.truth.world.frame, sample * cells * 2);
+      if (corpus.measurement.length > 0)
+        corpus.measurement.set(observation.measurement, sample * cells * 2);
       corpus.perception.set(poolPerception(config, perception), sample * 18);
       corpus.commands.set(encodeCommands(observation, step === 0), sample * 10);
       corpus.telemetry.set(observation.telemetry, sample * telemetryWidth);
@@ -107,7 +120,7 @@ export function collectCorpus(config: Config, episodes: number): Corpus {
   return corpus;
 }
 
-type Block = { values: Float64Array; width: number; history: boolean };
+type Block = { values: Float64Array; width: number };
 export type Inputs = {
   blocks: Block[];
   steps: number;
@@ -119,52 +132,45 @@ export type Inputs = {
 export function sourceInputs(corpus: Corpus, source: Source): Inputs {
   const block = (
     key: "frames" | "perception" | "commands" | "telemetry" | "measurement",
-  ): Block => ({
-    values: corpus[key],
-    width:
+  ): Block => {
+    const width =
       key === "perception"
         ? 18
         : key === "commands"
           ? 10
           : key === "telemetry"
             ? corpus.telemetryWidth
-            : corpus.cells * 2,
-    history: key !== "measurement",
-  });
+            : corpus.cells * 2;
+    if (corpus[key].length !== corpus.episodes * corpus.steps * width)
+      throw new Error(`Источник не сохранён в данных: ${key}`);
+    return { values: corpus[key], width };
+  };
   const blocks =
     source === "context"
       ? []
       : source === "schema"
         ? [block("perception"), block("commands"), block("telemetry")]
         : [block(source)];
-  const width =
-    source === "context"
-      ? corpus.steps
-      : blocks.reduce((sum, part) => sum + part.width * (part.history ? corpus.steps : 1), 0);
   return {
     blocks,
     steps: corpus.steps,
     samples: corpus.episodes * corpus.steps,
-    width,
+    width: source === "context" ? corpus.steps : blocks.reduce((sum, part) => sum + part.width, 0),
     context: source === "context",
   };
 }
 
 export function writeInput(inputs: Inputs, sample: number, output: Float64Array, offset = 0): void {
-  output.fill(0, offset, offset + inputs.width);
-  const step = sample % inputs.steps;
   if (inputs.context) {
-    output[offset + step] = 1;
+    output.fill(0, offset, offset + inputs.width);
+    output[offset + (sample % inputs.steps)] = 1;
     return;
   }
-  // Source histories are concatenated, each newest first and padded only before this episode.
+  // Only the current step, in source order. The recurrent state carries the history.
   for (const block of inputs.blocks) {
-    const history = block.history ? step + 1 : 1;
-    for (let lag = 0; lag < history; lag++) {
-      const start = (sample - lag) * block.width;
-      output.set(block.values.subarray(start, start + block.width), offset + lag * block.width);
-    }
-    offset += block.width * (block.history ? inputs.steps : 1);
+    const start = sample * block.width;
+    output.set(block.values.subarray(start, start + block.width), offset);
+    offset += block.width;
   }
 }
 
@@ -173,10 +179,16 @@ export type ProbeData = {
   rowLabels: Uint8Array;
   colLabels: Uint8Array;
   centers: Float64Array;
-  trainSamples: number;
+  trainEpisodes: number;
 };
-export type ProbeResult = { source: Source; meanError: number; withinOne: number };
-export type ProbeProgress = { axis: Axis; update: number; loss: number };
+export type ProbeResult = {
+  source: Source;
+  meanError: number;
+  withinOne: number;
+  bestError: number;
+};
+export type ProbeProgress = { update: number; loss: number; meanError: number };
+export const checkpointInterval = 500;
 
 export function probeData(config: Config, corpus: Corpus, source: Source): ProbeData {
   return {
@@ -184,54 +196,129 @@ export function probeData(config: Config, corpus: Corpus, source: Source): Probe
     rowLabels: corpus.rowLabels,
     colLabels: corpus.colLabels,
     centers: corpus.centers,
-    trainSamples: splitEpisodes(config, corpus.episodes).train * corpus.steps,
+    trainEpisodes: splitEpisodes(config, corpus.episodes).train,
   };
 }
 
-function argmax(values: Float64Array): number {
+export type Probe = {
+  gru: Gru;
+  classes: number;
+  parameters: Float64Array;
+  weights: Float64Array;
+  biases: Float64Array;
+};
+export type ProbeBatch = {
+  recurrent: GruBatch;
+  logits: Float64Array;
+  delta: Float64Array;
+  outputGradient: Float64Array;
+  gradient: Float64Array;
+};
+
+export function createProbe(input: number, hidden: number, classes: number, rng: Rng): Probe {
+  const initial = createGru(input, hidden, rng);
+  const count = initial.parameters.length;
+  const parameters = new Float64Array(count + 2 * classes * (hidden + 1));
+  parameters.set(initial.parameters);
+  const gru = bindGru(input, hidden, parameters.subarray(0, count));
+  const weights = parameters.subarray(count, count + 2 * classes * hidden);
+  const biases = parameters.subarray(count + weights.length);
+  const scale = 1 / Math.sqrt(hidden);
+  // Continue the GRU generator: readout output-major weights, then zero biases (no draws).
+  for (let index = 0; index < weights.length; index++)
+    weights[index] = -scale + 2 * scale * nextUnit(rng);
+  return { gru, classes, parameters, weights, biases };
+}
+
+export function createProbeBatch(model: Probe, size: number, steps: number): ProbeBatch {
+  return {
+    recurrent: createGruBatch(model.gru, size, steps),
+    logits: new Float64Array(size * steps * 2 * model.classes),
+    delta: new Float64Array(size * steps * 2 * model.classes),
+    outputGradient: new Float64Array(size * steps * model.gru.hidden),
+    gradient: new Float64Array(model.parameters.length),
+  };
+}
+
+export function forwardProbe(model: Probe, batch: ProbeBatch): Float64Array {
+  const { hidden } = model.gru;
+  const { size, steps, states } = batch.recurrent;
+  forwardGru(model.gru, batch.recurrent);
+  const outputs = 2 * model.classes;
+  // Sequence, time, output (row classes then column classes), hidden coordinate.
+  for (let sequence = 0; sequence < size; sequence++) {
+    for (let step = 0; step < steps; step++) {
+      const base = (sequence * (steps + 1) + step + 1) * hidden;
+      const destination = (sequence * steps + step) * outputs;
+      for (let j = 0; j < outputs; j++) {
+        let sum = 0;
+        for (let k = 0; k < hidden; k++) sum += model.weights[j * hidden + k]! * states[base + k]!;
+        batch.logits[destination + j] = sum + model.biases[j]!;
+      }
+    }
+  }
+  return batch.logits;
+}
+
+export function probeGradient(
+  model: Probe,
+  batch: ProbeBatch,
+  rows: Uint8Array,
+  cols: Uint8Array,
+): number {
+  const { hidden } = model.gru;
+  const { size, steps, states } = batch.recurrent;
+  const samples = size * steps;
+  const outputs = 2 * model.classes;
+  const readoutOffset = model.gru.parameters.length;
+  const biasOffset = readoutOffset + model.weights.length;
+  const { logits, delta, outputGradient, gradient } = batch;
+  gradient.fill(0);
+  outputGradient.fill(0);
+  let loss = 0;
+  // Sum cross-entropies in sequence/time/axis/class order; divide by B*T, not by 2*B*T.
+  for (let sample = 0; sample < samples; sample++) {
+    for (let axis = 0; axis < 2; axis++) {
+      const base = sample * outputs + axis * model.classes;
+      const label = (axis === 0 ? rows : cols)[sample]!;
+      let maximum = -Infinity;
+      for (let j = 0; j < model.classes; j++) maximum = Math.max(maximum, logits[base + j]!);
+      let sum = 0;
+      for (let j = 0; j < model.classes; j++) {
+        const value = Math.exp(logits[base + j]! - maximum);
+        delta[base + j] = value;
+        sum += value;
+      }
+      loss += Math.log(sum) - (logits[base + label]! - maximum);
+      for (let j = 0; j < model.classes; j++)
+        delta[base + j] = (delta[base + j]! / sum - (j === label ? 1 : 0)) / samples;
+    }
+    const sequence = Math.floor(sample / steps);
+    const stateBase = (sample + sequence + 1) * hidden;
+    for (let j = 0; j < outputs; j++) {
+      const d = delta[sample * outputs + j]!;
+      gradient[biasOffset + j] = gradient[biasOffset + j]! + d;
+      for (let k = 0; k < hidden; k++) {
+        const w = readoutOffset + j * hidden + k;
+        gradient[w] = gradient[w]! + d * states[stateBase + k]!;
+        outputGradient[sample * hidden + k] =
+          outputGradient[sample * hidden + k]! + d * model.weights[j * hidden + k]!;
+      }
+    }
+  }
+  backwardGru(model.gru, batch.recurrent, outputGradient, gradient);
+  return loss / samples;
+}
+
+function argmax(values: Float64Array, offset: number, length: number): number {
   let best = 0;
-  for (let index = 1; index < values.length; index++)
-    if (values[index]! > values[best]!) best = index;
+  for (let index = 1; index < length; index++)
+    if (values[offset + index]! > values[offset + best]!) best = index;
   return best;
 }
 
-function fitAxis(
-  config: Config,
-  data: ProbeData,
-  axis: Axis,
-  onProgress?: (progress: ProbeProgress) => void,
-): Uint8Array {
-  // Reset seed 1 and the axis stream for every source. Consume initialization first,
-  // then one uniform draw per batch row, sampling training examples with replacement.
-  const rng = createRng(1, axis === "row" ? streams.probeRow : streams.probeCol);
-  const model = createMlp([data.inputs.width, config.f4Hidden, config.fieldSize], rng);
-  const adam = createAdam(model.parameters.length);
-  const batch = createBatch(model, config.f4BatchSize);
-  const labels = new Uint8Array(config.f4BatchSize);
-  const allLabels = axis === "row" ? data.rowLabels : data.colLabels;
-  for (let update = 1; update <= config.f4Updates; update++) {
-    for (let row = 0; row < config.f4BatchSize; row++) {
-      const sample = nextInt(rng, data.trainSamples);
-      writeInput(data.inputs, sample, batch.activations[0]!, row * data.inputs.width);
-      labels[row] = allLabels[sample]!;
-    }
-    forward(model, batch);
-    const loss = crossEntropyGradient(model, batch, labels);
-    if (!Number.isFinite(loss)) throw new Error("Потери зонда перестали быть конечными");
-    adamStep(model.parameters, batch.gradient, adam);
-    onProgress?.({ axis, update, loss });
-  }
-  const evaluation = createBatch(model, 1);
-  const predictions = new Uint8Array(data.inputs.samples - data.trainSamples);
-  for (let sample = data.trainSamples; sample < data.inputs.samples; sample++) {
-    writeInput(data.inputs, sample, evaluation.activations[0]!);
-    predictions[sample - data.trainSamples] = argmax(forward(model, evaluation));
-  }
-  return predictions;
-}
-
 export function scorePredictions(
-  data: Pick<ProbeData, "centers" | "trainSamples">,
+  data: { centers: Float64Array; trainSamples: number },
   rows: Uint8Array,
   cols: Uint8Array,
 ): { meanError: number; withinOne: number } {
@@ -248,16 +335,79 @@ export function scorePredictions(
   return { meanError: error / rows.length, withinOne: withinOne / rows.length };
 }
 
+function evaluateProbe(model: Probe, data: ProbeData, batch: ProbeBatch) {
+  const { steps, samples, width } = data.inputs;
+  const trainSamples = data.trainEpisodes * steps;
+  const rows = new Uint8Array(samples - trainSamples);
+  const cols = new Uint8Array(rows.length);
+  for (let first = trainSamples; first < samples; first += steps) {
+    for (let step = 0; step < steps; step++)
+      writeInput(data.inputs, first + step, batch.recurrent.inputs, step * width);
+    const logits = forwardProbe(model, batch);
+    for (let step = 0; step < steps; step++) {
+      const base = step * 2 * model.classes;
+      rows[first + step - trainSamples] = argmax(logits, base, model.classes);
+      cols[first + step - trainSamples] = argmax(logits, base + model.classes, model.classes);
+    }
+  }
+  return scorePredictions({ centers: data.centers, trainSamples }, rows, cols);
+}
+
 export function fitProbe(
   config: Config,
   data: ProbeData,
   source: Source,
   onProgress?: (progress: ProbeProgress) => void,
 ): ProbeResult {
-  if (data.trainSamples < 1 || data.trainSamples >= data.inputs.samples) {
+  const { steps, samples, width } = data.inputs;
+  if (
+    !Number.isSafeInteger(data.trainEpisodes) ||
+    data.trainEpisodes < 1 ||
+    data.trainEpisodes >= samples / steps ||
+    samples % steps !== 0
+  )
     throw new Error("Обе части данных зонда должны быть непустыми");
+  // Each source resets seed 1, stream 22: GRU, readout, then B episode draws per update.
+  // This makes a selected source independent of which other sources run or finish first.
+  const rng = createRng(1, streams.probe);
+  const model = createProbe(width, config.f4Hidden, config.fieldSize, rng);
+  const adam = createAdam(model.parameters.length);
+  const batch = createProbeBatch(model, config.f4BatchSize, steps);
+  const evaluation = createProbeBatch(model, 1, steps);
+  const rows = new Uint8Array(config.f4BatchSize * steps);
+  const cols = new Uint8Array(rows.length);
+  const recentLosses = new Float64Array(checkpointInterval);
+  let bestError = Infinity;
+  let final = { meanError: Infinity, withinOne: 0 };
+  for (let update = 1; update <= config.f4Updates; update++) {
+    for (let sequence = 0; sequence < config.f4BatchSize; sequence++) {
+      const episode = nextInt(rng, data.trainEpisodes);
+      for (let step = 0; step < steps; step++) {
+        const sample = episode * steps + step;
+        const destination = sequence * steps + step;
+        writeInput(data.inputs, sample, batch.recurrent.inputs, destination * width);
+        rows[destination] = data.rowLabels[sample]!;
+        cols[destination] = data.colLabels[sample]!;
+      }
+    }
+    forwardProbe(model, batch);
+    const loss = probeGradient(model, batch, rows, cols);
+    if (!Number.isFinite(loss)) throw new Error("Потери зонда перестали быть конечными");
+    adamStep(model.parameters, batch.gradient, adam);
+    recentLosses[(update - 1) % checkpointInterval] = loss;
+    if (update % checkpointInterval === 0 || update === config.f4Updates) {
+      final = evaluateProbe(model, data, evaluation);
+      if (!Number.isFinite(final.meanError))
+        throw new Error("Ошибка зонда перестала быть конечной");
+      bestError = Math.min(bestError, final.meanError);
+      const count = Math.min(update, checkpointInterval);
+      const first = update < checkpointInterval ? 0 : update % checkpointInterval;
+      let sum = 0;
+      // Even a final partial interval reports the most recent 500 updates, in time order.
+      for (let index = 0; index < count; index++)
+        sum += recentLosses[(first + index) % checkpointInterval]!;
+      onProgress?.({ update, loss: sum / count, meanError: final.meanError });
+    }
   }
-  const rows = fitAxis(config, data, "row", onProgress);
-  const cols = fitAxis(config, data, "col", onProgress);
-  return { source, ...scorePredictions(data, rows, cols) };
+  return { source, ...final, bestError };
 }

@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createRng, nextInt, nextUnit } from "../rng.ts";
 import { configure, defaults } from "./config.ts";
 import { applyAction, createEpisode } from "./episode.ts";
 import { createNeutralPolicy } from "./policies.ts";
 import { createPerception, poolPerception, updatePerception } from "./perception.ts";
 import {
+  createProbe,
+  createProbeBatch,
+  forwardProbe,
+  probeGradient,
   collectCorpus,
   encodeCommands,
   f4FirstSeed,
@@ -19,7 +24,7 @@ import {
   type ProbeData,
 } from "./f4.ts";
 import { runProbes } from "./f4-workers.ts";
-import { formatResults } from "./f4-cli.ts";
+import { formatResults, parseF4Options } from "./f4-cli.ts";
 import { checkTarget } from "./evaluate.ts";
 import { parseOptions } from "./check-cli.ts";
 
@@ -30,23 +35,25 @@ function input(corpus: Corpus, source: (typeof sources)[number], sample: number)
   return output;
 }
 
-test("source histories run newest first, reset by episode and concatenate exactly for schema", () => {
+test("each source contains one step and schema concatenates exactly its three inputs", () => {
   const corpus = collectCorpus(defaults, 2);
-  assert.equal(sourceInputs(corpus, "frames").width, 15360);
-  assert.equal(sourceInputs(corpus, "schema").width, 1320);
+  const widths = [512, 18, 10, 16, 44, 30, 512];
+  sources.forEach((source, index) =>
+    assert.equal(sourceInputs(corpus, source).width, widths[index]),
+  );
   for (const sample of [0, 1, 29, 30, 31, 59]) {
-    const step = sample % 30;
-    for (const source of ["frames", "perception", "commands", "telemetry"] as const) {
-      const values = input(corpus, source, sample);
-      const width =
-        source === "frames" ? 512 : source === "perception" ? 18 : source === "commands" ? 10 : 16;
-      for (let lag = 0; lag <= step; lag++) {
-        assert.deepEqual(
-          values.slice(lag * width, (lag + 1) * width),
-          corpus[source].slice((sample - lag) * width, (sample - lag + 1) * width),
-        );
-      }
-      assert.ok(values.slice((step + 1) * width).every((value) => value === 0));
+    for (const source of [
+      "frames",
+      "perception",
+      "commands",
+      "telemetry",
+      "measurement",
+    ] as const) {
+      const width = sourceInputs(corpus, source).width;
+      assert.deepEqual(
+        input(corpus, source, sample),
+        corpus[source].slice(sample * width, (sample + 1) * width),
+      );
     }
     assert.deepEqual(
       [...input(corpus, "schema", sample)],
@@ -56,13 +63,8 @@ test("source histories run newest first, reset by episode and concatenate exactl
         ...input(corpus, "telemetry", sample),
       ],
     );
-    assert.deepEqual(
-      input(corpus, "measurement", sample),
-      corpus.measurement.slice(sample * 512, (sample + 1) * 512),
-    );
     const context = input(corpus, "context", sample);
-    assert.equal(context.length, 30);
-    assert.equal(context[step], 1);
+    assert.equal(context[sample % 30], 1);
     assert.equal(
       context.reduce((sum, value) => sum + value, 0),
       1,
@@ -110,7 +112,7 @@ test("corpus labels use rounded true centers and each source stores only its dec
   }
   assert.deepEqual(splitEpisodes(defaults, 2000), { train: 1600, test: 400 });
   assert.deepEqual(splitEpisodes(defaults, 7), { train: 5, test: 2 });
-  assert.equal(probeData(defaults, corpus, "schema").trainSamples, 30);
+  assert.equal(probeData(defaults, corpus, "schema").trainEpisodes, 1);
   assert.throws(() => splitEpisodes(defaults, 1), /хотя бы два/);
 });
 
@@ -122,57 +124,138 @@ test("probe scoring uses continuous centers instead of rounded class labels", ()
   });
 });
 
+test("joint row and column loss differentiates every GRU and readout parameter", () => {
+  const rng = createRng(10, 22);
+  const expected = createRng(10, 22);
+  const model = createProbe(3, 4, 5, rng);
+  for (let i = 0; i < 3 * 4 * (3 + 4) + 2 * 5 * 4; i++) nextUnit(expected);
+  assert.deepEqual(rng, expected);
+  assert.ok(model.biases.every((value) => value === 0));
+  assert.equal(model.gru.parameters.buffer, model.parameters.buffer);
+  const batch = createProbeBatch(model, 2, 5);
+  batch.recurrent.inputs.set(Float64Array.from(batch.recurrent.inputs, () => nextUnit(rng) - 0.5));
+  const rows = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
+  const cols = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
+  const loss = () => {
+    forwardProbe(model, batch);
+    return probeGradient(model, batch, rows, cols);
+  };
+  loss();
+  const gradient = batch.gradient.slice();
+  for (let index = 0; index < model.parameters.length; index++) {
+    const value = model.parameters[index]!;
+    model.parameters[index] = value + 1e-5;
+    const plus = loss();
+    model.parameters[index] = value - 1e-5;
+    const minus = loss();
+    model.parameters[index] = value;
+    assert.ok(Math.abs(gradient[index]! - (plus - minus) / 2e-5) < 1e-8, `parameter ${index}`);
+  }
+  model.parameters.fill(0);
+  assert.ok(Math.abs(loss() - 2 * Math.log(5)) < 1e-14);
+});
+
 function toyData(informative: boolean, context = false): ProbeData {
-  const samples = 160;
-  const values = new Float64Array(samples * 4);
-  const rowLabels = new Uint8Array(samples);
+  const episodes = 256;
+  const steps = 6;
+  const samples = episodes * steps;
+  const values = new Float64Array(samples * 3);
+  const rowLabels = new Uint8Array(samples).fill(2);
   const colLabels = new Uint8Array(samples);
   const centers = new Float64Array(samples * 2);
-  for (let sample = 0; sample < samples; sample++) {
-    const label = sample % 4;
-    if (informative) values[sample * 4 + label] = 1;
-    colLabels[sample] = label;
-    centers[sample * 2 + 1] = label;
+  const rng = createRng(124, 0);
+  for (let episode = 0; episode < episodes; episode++) {
+    let position = 2;
+    for (let step = 0; step < steps; step++) {
+      const sample = episode * steps + step;
+      const move = nextInt(rng, 3);
+      position = Math.max(0, Math.min(4, position + move - 1));
+      if (informative) values[sample * 3 + move] = 1;
+      colLabels[sample] = position;
+      centers[sample * 2] = 2;
+      centers[sample * 2 + 1] = position;
+    }
   }
   return {
     inputs: {
-      blocks: context ? [] : [{ values, width: 4, history: false }],
-      steps: 1,
+      blocks: context ? [] : [{ values, width: 3 }],
+      steps,
       samples,
-      width: context ? 1 : 4,
+      width: context ? steps : 3,
       context,
     },
     rowLabels,
     colLabels,
     centers,
-    trainSamples: 128,
+    trainEpisodes: 192,
   };
 }
 
-test("the probe learns explicit class information while blank and time inputs stay at baseline", () => {
-  const config = configure({ f4Hidden: 24, f4BatchSize: 16, f4Updates: 300 });
-  const explicit = fitProbe(config, toyData(true), "measurement");
-  assert.ok(explicit.meanError < 0.1);
-  assert.ok(explicit.withinOne > 0.98);
+test("the recurrent probe accumulates clipped moves and blank input remains near time-only error", () => {
+  // This toy uses five classes independently of the target world's geometry.
+  const config = { ...defaults, fieldSize: 5, f4Hidden: 16, f4BatchSize: 16, f4Updates: 800 };
+  const checkpoints: number[] = [];
+  const sum = fitProbe(config, toyData(true), "commands", (progress) =>
+    checkpoints.push(progress.update),
+  );
+  assert.ok(sum.meanError < 0.15, JSON.stringify(sum));
+  assert.ok(sum.withinOne > 0.98);
+  assert.ok(sum.bestError <= sum.meanError);
+  assert.deepEqual(checkpoints, [500, 800]);
   const blank = fitProbe(config, toyData(false), "measurement");
   const context = fitProbe(config, toyData(false, true), "context");
-  assert.ok(blank.meanError >= 1);
-  assert.ok(Math.abs(blank.meanError - context.meanError) <= 0.5);
+  assert.ok(blank.meanError > sum.meanError + 0.5);
+  assert.ok(Math.abs(blank.meanError - context.meanError) < 0.3);
 });
 
-test("worker count and completion order do not change probe results or stdout", async () => {
+test("source selection preserves data, result rows and stdout across worker counts and completion orders", async () => {
   const config = configure({ f4Hidden: 4, f4BatchSize: 2, f4Updates: 2 });
   const corpus = collectCorpus(config, 2);
+  const subset = collectCorpus(config, 2, ["schema", "context"]);
+  assert.equal(subset.frames.length, 0);
+  assert.equal(subset.measurement.length, 0);
+  for (const key of [
+    "perception",
+    "commands",
+    "telemetry",
+    "centers",
+    "rowLabels",
+    "colLabels",
+  ] as const)
+    assert.deepEqual(subset[key], corpus[key]);
+  assert.throws(() => sourceInputs(subset, "frames"), /не сохранён/);
   const serial = await runProbes(config, corpus, 1);
   const parallel = await runProbes(config, corpus, 3);
+  const selected = await runProbes(config, subset, 2, undefined, ["context", "schema"]);
   assert.deepEqual(serial, parallel);
+  assert.deepEqual(
+    selected,
+    serial.filter((result) => ["schema", "context"].includes(result.source)),
+  );
   assert.deepEqual(
     serial.map((result) => result.source),
     [...sources],
   );
   const options = { episodes: 2, config };
   assert.equal(formatResults(options, serial), formatResults(options, parallel.slice().reverse()));
+  const full = formatResults(options, serial).split("\n");
+  for (const line of formatResults(options, selected).trimEnd().split("\n"))
+    assert.ok(full.includes(line));
   assert.doesNotMatch(formatResults(options, serial), /NaN|Infinity|Время|пройден/);
+  for (const result of serial) assert.equal(result.bestError, result.meanError);
+});
+
+test("source parsing validates names and orders selected rows canonically", () => {
+  assert.deepEqual(parseF4Options([]).sources, [...sources]);
+  assert.deepEqual(parseF4Options(["--sources", "schema,telemetry,schema"]).sources, [
+    "telemetry",
+    "schema",
+  ]);
+  assert.equal(parseF4Options(["--episodes", "10", "--sources", "commands"]).episodes, 10);
+  for (const value of ["", " ", "unknown", ",schema", "schema,", "schema,,commands"])
+    assert.throws(() => parseF4Options(["--sources", value]));
+  assert.throws(() => parseF4Options(["--sources"]));
+  assert.throws(() => parseF4Options(["--sources", "schema", "--sources", "commands"]));
 });
 
 test("new settings validate and attention event summaries retain their exact values", () => {
