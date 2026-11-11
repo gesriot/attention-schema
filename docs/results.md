@@ -971,3 +971,90 @@ Run ahead of the registered order, on a copy of the code with the first percepti
 | 16 | 0.5 | 7.87 | 6.25 |
 
 The first row is the first F4 run. No setting has the telemetry at 1.5 or more and the schema's inputs at 1 or less. The probe of all schema inputs barely improves on the telemetry: by 0.05 to 0.09 cells while the telemetry is informative, and by 0.5 to 1.6 cells only when the telemetry is weak, which is still far from 1. A probe that sees the command history does not integrate it into a position. With the first perception there is nothing to anchor the integration to; the second perception, which finds the target at the start, may change this.
+
+## Second tuning: confirming runs
+
+`npm run target:check -- --episodes 2000` in the repository at the chosen setting, which is now the default.
+
+| Condition | Bound | Result |
+| :-- | --: | --: |
+| F2 with perception, correct | at least 0.75 | 0.7905 |
+| C0 with perception, correct | at most 0.35 | 0.2630 |
+| F2 with the ideal observer, correct | at least 0.85 | 0.9730 |
+| Pure-noise frames with the largest signal-to-noise at the threshold or above | at most 0.05 | 0.0445 |
+
+All hold, and the F6 table is unchanged byte for byte. C0 with the ideal observer is 0.8435, for reference. Slot 0 is within 1 cell of the target on 0.824 of steps under F2 and 0.180 under C0. The false-alarm check uses 2000 frames of unit noise from its own generator stream; the 95th percentile of the frame maximum is 9.74, against 9.49 on the scratch copy.
+
+One difference from the scratch copy: when no cell reaches the minimum brightness on the first step, the scratch copy put slot 0 at cell (0, 0), and the repository leaves it inactive until a candidate appears. Three C0 episodes differ, by 17 tracked steps of 60000. Every other number matches to six decimals.
+
+## F4 with the second perception
+
+`npm run target:f4 -- --episodes 2000` at the new defaults.
+
+| Source | Mean error, cells | Within 1 cell |
+| :-- | --: | --: |
+| Clean frames | 6.61 | 0.04 |
+| Perception | 3.28 | 0.13 |
+| Commands | 7.77 | 0.03 |
+| Telemetry | 1.24 | 0.50 |
+| All schema inputs | 1.14 | 0.59 |
+| Time only | 8.50 | 0.02 |
+| Current measurement (reference) | 7.64 | 0.01 |
+
+**F4 fails on the same two conditions.** Telemetry alone gives the position to 1.24 cells, less than 1.5, and the schema's inputs together miss by 1.14 cells, more than 1. The perception now carries something, 3.28 against 6.36, and the clean frames, the perception and the commands meet their condition.
+
+The telemetry block size and noise were then varied, as registered. Only the telemetry and schema rows depend on them. Each row is 2000 episodes with the same probes.
+
+| Block k | Noise σ_ν | Telemetry, cells | All schema inputs, cells |
+| --: | --: | --: | --: |
+| 4 | 0.5 | 1.24 | 1.14 |
+| 4 | 0.75 | 1.42 | 1.31 |
+| 4 | 1 | 1.61 | 1.48 |
+| 4 | 2 | 2.40 | 2.09 |
+| 4 | 4 | 4.35 | 3.02 |
+| 2 | 0.5 | 1.27 | 1.26 |
+| 8 | 0.1 | 2.58 | 1.73 |
+| 8 | 0.5 | 2.96 | 1.92 |
+| 16 | 0.5 | 7.87 | 2.77 |
+
+**No setting passes.** Wherever the telemetry alone is at 1.5 or more, the schema's inputs together are at 1.48 or more. The telemetry column repeats the grid run earlier with the first perception, as it should.
+
+## F4: what the probe misses
+
+Diagnostics, not verdicts. They ask whether the failure lies in the world or in the probe.
+
+**More training does not help the probe, more data helps a little.** The same probe with ten times the updates or four times the episodes, k 4:
+
+| Episodes | Updates | σ_ν | Telemetry, cells | All schema inputs, cells |
+| --: | --: | --: | --: | --: |
+| 2000 | 2000 | 0.5 | 1.24 | 1.14 |
+| 2000 | 20000 | 0.5 | 1.49 | 1.30 |
+| 8000 | 2000 | 0.5 | 1.16 | 1.01 |
+| 8000 | 20000 | 0.5 | 1.21 | 1.02 |
+| 8000 | 20000 | 1 | 1.56 | 1.32 |
+
+With 2000 episodes the longer training overfits. With 8000 episodes both rows improve together and the gap between them stays near 0.15 cells.
+
+**A filter over the same inputs does much better.** A scratch filter, per axis, over the 16 cells: the likelihood of the current telemetry from a probe that sees one step of telemetry (16–200–16, 5000 updates), and transition tables counted on the training episodes. It runs in four forms: without commands, with the previous command, with the command and a start taken from slot 0 on the first step, and with the start and commands but no telemetry. 2000 episodes, the same split.
+
+| Block k | Noise σ_ν | One step of telemetry | Telemetry, filtered | With commands | With commands and start |
+| --: | --: | --: | --: | --: | --: |
+| 4 | 0.5 | 1.49 | 1.09 | 0.88 | 0.83 |
+| 4 | 0.75 | 2.02 | 1.26 | 1.00 | 0.92 |
+| 4 | 1 | 2.61 | 1.44 | 1.13 | 1.02 |
+| 4 | 1.5 | 3.84 | 1.80 | 1.42 | 1.22 |
+| 4 | 2 | 4.87 | 2.27 | 1.83 | 1.43 |
+| 2 | 0.5 | 1.69 | 0.82 | 0.74 | 0.73 |
+| 2 | 1 | 4.48 | 1.58 | 1.34 | 1.15 |
+| 8 | 0.1 | 2.95 | 2.39 | 2.06 | 1.52 |
+| 8 | 0.25 | 3.12 | 2.53 | 2.18 | 1.59 |
+| 8 | 0.5 | 3.33 | 2.70 | 2.30 | 1.65 |
+
+The start and the commands without telemetry give 1.97 cells: 0.42 on the first step and 2.93 on the last, as captures and the mechanism's noise pull the focus off the commanded path. A perfect estimate rounded to a cell would score 0.38.
+
+What this shows:
+
+- **The information is in the schema's inputs.** At the defaults a crude filter reaches 0.83 cells from 1600 training episodes, where the probe reaches 1.14, and 1.01 from 6400. The probe sees the whole history at once and does not learn to carry a position forward by the commands.
+- **The sources do complement each other.** Commands take a quarter off the filtered telemetry's error and the start a little more. Neither the telemetry alone nor the start with commands alone reaches what they give together.
+- **A filter also reads the telemetry alone better than the probe does**, 1.09 against 1.24. With a probe of this kind, the telemetry noise would have to rise to about 1.1 before telemetry alone misses by 1.5 cells.
+- **The two bounds are tight for this world.** The ratio of the error from all inputs to the error from telemetry alone is 0.76 at σ_ν 0.5, 0.71 at 1 and 0.63 at 2, and the bounds ask for 0.67 at an absolute level of 1 cell. The filter misses narrowly at σ_ν 1: 1.44 and 1.02. It does not use the second slot or the effort, and it works in whole cells, so a learned recurrent probe may do better on all inputs; it may also do better on telemetry alone.
