@@ -1058,3 +1058,17 @@ What this shows:
 - **The sources do complement each other.** Commands take a quarter off the filtered telemetry's error and the start a little more. Neither the telemetry alone nor the start with commands alone reaches what they give together.
 - **A filter also reads the telemetry alone better than the probe does**, 1.09 against 1.24. With a probe of this kind, the telemetry noise would have to rise to about 1.1 before telemetry alone misses by 1.5 cells.
 - **The two bounds are tight for this world.** The ratio of the error from all inputs to the error from telemetry alone is 0.76 at σ_ν 0.5, 0.71 at 1 and 0.63 at 2, and the bounds ask for 0.67 at an absolute level of 1 cell. The filter misses narrowly at σ_ν 1: 1.44 and 1.02. It does not use the second slot or the effort, and it works in whole cells, so a learned recurrent probe may do better on all inputs; it may also do better on telemetry alone.
+
+## Planned: F4 with a recurrent probe
+
+Registered before any run of the new probe. The conditions of F4 do not change: the schema's inputs together give the position to at most 1 cell, and each of the clean frames, the perception summary, the command history and the telemetry misses by at least 1.5 cells. The measure, the seeds and the neutral policy stay. Only the probe changes.
+
+**Why.** The first probe took the whole history as one flat input. The diagnostics above show that it does not carry a position forward by the commands, while a filter over the same inputs does, so its failure on the schema's inputs says little about the inputs. The schema itself is recurrent, and the question F4 asks is what a module of that kind can recover.
+
+**The probe.** A GRU, the kind of module the spec gives the schema, fed one step of its source per step, with 64 hidden units and a linear readout of the row and the column at every step. It is trained by cross-entropy on both, averaged over steps, with Adam at 0.001 and batches of 32 episodes for 6000 updates. The run has 8000 episodes, the first 6400 for training. Every source gets the same probe. The reference row becomes the history of $x_t$.
+
+**Reading.** The held-out error is taken every 500 updates. For a single source the lowest of these counts, so that an overfitted probe cannot pass for an uninformative source. For the schema's inputs the last one counts.
+
+**The probe's own settings.** If the held-out error of the telemetry or schema probe is still falling at the end, or has turned up, the number of updates, hidden units or episodes is changed until it is flat. This is judged on the error curves at the default telemetry, not on whether F4 passes, and every setting is recorded.
+
+**If it fails.** Only the telemetry block size and noise are varied, as before. If no setting passes, that is the result. The bounds of 1 and 1.5 cells are not moved without a separate decision registered before further runs.
