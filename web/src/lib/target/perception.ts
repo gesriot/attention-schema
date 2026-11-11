@@ -9,6 +9,7 @@ export type PerceptionConfig = Pick<
   | "velocityGain"
   | "hueForget"
   | "maxMissed"
+  | "minBrightness"
 >;
 export type Slot = {
   active: boolean;
@@ -45,6 +46,9 @@ export function createPerception(): Perception {
   return { slots: [inactiveSlot(), inactiveSlot()] };
 }
 
+// Phi^-1(0.625), the lower quartile of |N(0, 1)|.
+export const standardNormalAbsLowerQuartile = 0.3186393639643752;
+
 export function localNoise(measurement: Float64Array, size: number): Float64Array {
   const noise = new Float64Array(size * size);
   const neighbors: number[] = [];
@@ -53,19 +57,34 @@ export function localNoise(measurement: Float64Array, size: number): Float64Arra
       neighbors.length = 0;
       for (let r = Math.max(0, row - 1); r <= Math.min(size - 1, row + 1); r++) {
         for (let c = Math.max(0, col - 1); c <= Math.min(size - 1, col + 1); c++) {
-          if (r !== row || c !== col) neighbors.push(Math.abs(measurement[r * size + c]!));
+          if (r !== row || c !== col) {
+            neighbors.push(Math.abs(measurement[r * size + c]!));
+            neighbors.push(Math.abs(measurement[size * size + r * size + c]!));
+          }
         }
       }
       neighbors.sort((a, b) => a - b);
-      const middle = Math.floor(neighbors.length / 2);
-      const median =
-        neighbors.length % 2 === 0
-          ? (neighbors[middle - 1]! + neighbors[middle]!) / 2
-          : neighbors[middle]!;
-      noise[row * size + col] = 1.4826 * median;
+      const position = 0.25 * (neighbors.length - 1);
+      // Average the two order statistics; do not interpolate by the fractional rank.
+      const quartile = (neighbors[Math.floor(position)]! + neighbors[Math.ceil(position)]!) / 2;
+      noise[row * size + col] = quartile / standardNormalAbsLowerQuartile;
     }
   }
   return noise;
+}
+
+function globalCandidate(
+  config: PerceptionConfig,
+  measurement: Float64Array,
+  snr: Float64Array,
+): number {
+  let best = -1;
+  for (let cell = 0; cell < snr.length; cell++) {
+    if (measurement[cell]! >= config.minBrightness && (best === -1 || snr[cell]! > snr[best]!)) {
+      best = cell;
+    }
+  }
+  return best;
 }
 
 function activate(
@@ -107,13 +126,26 @@ export function updatePerception(
   }
   const slots: [Slot, Slot] = [{ ...previous.slots[0] }, { ...previous.slots[1] }];
   if (!slots[0].active) {
-    let best = 0;
-    for (let cell = 1; cell < cells; cell++) if (snr[cell]! > snr[best]!) best = cell;
-    return { slots: [activate(config, best, measurement, noise, snr), inactiveSlot()] };
+    const best = globalCandidate(config, measurement, snr);
+    return {
+      slots: [
+        best === -1 ? inactiveSlot() : activate(config, best, measurement, noise, snr),
+        inactiveSlot(),
+      ],
+    };
   }
   for (let index = 0; index < slots.length; index++) {
     const slot = slots[index]!;
     const occupied = index === 0 ? -1 : slots[0].row * size + slots[0].col;
+    // Test the miss count at the beginning of the step. A successful new search
+    // replaces all slot-zero state and skips its ordinary gated update.
+    if (index === 0 && slot.missed >= config.maxMissed) {
+      const best = globalCandidate(config, measurement, snr);
+      if (best !== -1 && snr[best]! >= config.detectThreshold) {
+        slots[0] = activate(config, best, measurement, noise, snr);
+        continue;
+      }
+    }
     if (!slot.active) {
       let best = -1;
       for (let row = 0; row < size; row++) {
@@ -124,7 +156,11 @@ export function updatePerception(
           )
             continue;
           const cell = row * size + col;
-          if (best === -1 || snr[cell]! > snr[best]!) best = cell;
+          if (
+            measurement[cell]! >= config.minBrightness &&
+            (best === -1 || snr[cell]! > snr[best]!)
+          )
+            best = cell;
         }
       }
       if (best !== -1 && snr[best]! >= config.detectThreshold) {
@@ -147,7 +183,12 @@ export function updatePerception(
         col++
       ) {
         const cell = row * size + col;
-        if (cell !== occupied && (best === -1 || snr[cell]! > snr[best]!)) best = cell;
+        if (
+          cell !== occupied &&
+          measurement[cell]! >= config.minBrightness &&
+          (best === -1 || snr[cell]! > snr[best]!)
+        )
+          best = cell;
       }
     }
     if (best !== -1 && snr[best]! >= config.detectThreshold) {

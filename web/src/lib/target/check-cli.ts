@@ -54,6 +54,7 @@ const labels: Record<Parameter, string> = {
   gateRadius: "Радиус ворот слота",
   detectThreshold: "Порог обнаружения",
   velocityGain: "Коэффициент обновления скорости",
+  minBrightness: "Минимальная яркость обнаружения",
   hueForget: "Сохранение веса оттенка",
   maxMissed: "Пропусков до гашения слота 1",
   f4Hidden: "Скрытых узлов зонда F4",
@@ -135,6 +136,12 @@ export function formatResults(options: Options, result: CheckResult): string {
         `${control.catchRate.toFixed(6)} | ${control.trackingRate.toFixed(6)}`,
     );
   }
+  lines.push(
+    "",
+    `Ложные тревоги · чистый единичный шум · кадров ${result.falseAlarms.frames.toFixed(0)}`,
+    "Доля кадров с максимумом SNR не ниже порога | 95-й перцентиль максимума SNR",
+    `${result.falseAlarms.rate.toFixed(6)} | ${result.falseAlarms.percentile95.toFixed(6)}`,
+  );
   lines.push("", "F6 · события", "Показатель | Нейтральная политика | Идеальная политика");
   const rows = [
     ["flashes", "Число вспышек"],

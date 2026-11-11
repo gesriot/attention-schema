@@ -30,7 +30,7 @@ export const defaults = {
   sigmaB: 2.5,
   betaExo: 2,
   sigmaEpsilon: 0.1,
-  sigmaEta: 2,
+  sigmaEta: 0.25,
   alpha: 0.95,
   k: 4,
   sigmaNu: 0.5,
@@ -40,9 +40,10 @@ export const defaults = {
   focusThreshold: 0.5,
   shiftThreshold: 1,
   sigmaFloor: 0.05,
-  gateRadius: 2,
-  detectThreshold: 4,
-  velocityGain: 0.5,
+  gateRadius: 3,
+  detectThreshold: 10,
+  velocityGain: 0.25,
+  minBrightness: 0.65,
   hueForget: 0.5,
   maxMissed: 3,
   f4Hidden: 200,
@@ -66,6 +67,7 @@ export const streams = {
   policy: 21,
   probeRow: 22,
   probeCol: 23,
+  falseAlarm: 24,
 };
 
 export function validateConfig(config: Config): void {

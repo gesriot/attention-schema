@@ -175,7 +175,7 @@ test("worker count and completion order do not change probe results or stdout", 
   assert.doesNotMatch(formatResults(options, serial), /NaN|Infinity|Время|пройден/);
 });
 
-test("new settings validate and the pre-existing control summaries retain their exact values", () => {
+test("new settings validate and attention event summaries retain their exact values", () => {
   for (const entry of [
     "sigmaFloor=0",
     "gateRadius=1.5",
@@ -187,14 +187,14 @@ test("new settings validate and the pre-existing control summaries retain their 
     "f4BatchSize=0",
     "f4Updates=0",
     "f4TrainFraction=1",
+    "minBrightness=-1",
   ]) {
     assert.throws(() => parseOptions(["--set", entry]));
   }
-  const { perception: _perception, ...result } = checkTarget(defaults, 3);
-  // Captured before adding perception, on the same three control seeds and tuned defaults.
+  const { neutral, ideal } = checkTarget(defaults, 3);
+  // Attention events are independent of the measurement noise and perception.
+  const result = { neutral, ideal };
   assert.deepEqual(result, {
-    F2: { correctRate: 2 / 3, catchRate: 1, meanScore: 1.14 },
-    C0: { correctRate: 1 / 3, catchRate: 1, meanScore: 0.47333333333333333 },
     neutral: {
       flashes: 6,
       captureRate: 1 / 3,

@@ -36,7 +36,10 @@ export function checkPerception(config: Config, episodes: number): PerceptionCon
         const slot = perception.slots[0];
         const target = episode.truth.world.target;
         // Truth is used here only for evaluation and the prescribed oracle attention command.
-        if (Math.max(Math.abs(slot.row - target.row), Math.abs(slot.col - target.col)) <= 1) {
+        if (
+          slot.active &&
+          Math.max(Math.abs(slot.row - target.row), Math.abs(slot.col - target.col)) <= 1
+        ) {
           result.trackingRate++;
         }
         applyAction(

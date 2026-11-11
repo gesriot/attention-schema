@@ -4,6 +4,7 @@ import { applyAction, createEpisode, type Action, type Score, type Truth } from 
 import { createIdealPolicy, createNeutralPolicy } from "./policies.ts";
 import { isOccluded, type Position } from "./world.ts";
 import { checkPerception, type PerceptionControls } from "./perception-controls.ts";
+import { checkFalseAlarms, type FalseAlarms } from "./false-alarms.ts";
 
 export type EventCounts = {
   episodes: number;
@@ -132,6 +133,7 @@ export type CheckResult = {
   neutral: EventSummary;
   ideal: EventSummary;
   perception: PerceptionControls;
+  falseAlarms: FalseAlarms;
 };
 
 function addCounts(total: EventCounts, counts: EventCounts): void {
@@ -193,5 +195,6 @@ export function checkTarget(config: Config, episodes: number): CheckResult {
     neutral: summarizeEvents(neutralCounts),
     ideal: summarizeEvents(idealCounts),
     perception: checkPerception(config, episodes),
+    falseAlarms: checkFalseAlarms(config),
   };
 }
