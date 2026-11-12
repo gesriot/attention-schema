@@ -1118,7 +1118,7 @@ The schema's inputs give the position to 0.83 cells, where the flat probe gave 1
 | 2 | 1 | 1.56 | 1.31 |
 | 2 | 1.25 | 2.06 | 1.61 |
 
-With k 4 every probe is flat. With k 2 the held-out error turns up after update 3000 to 4000. In neither is there a noise at which both conditions hold: where the telemetry alone reaches 1.5 cells, the schema's inputs give 1.16 with k 4 and about 1.3 with k 2. With k 8 the schema probe was still falling at update 6000, which the section above registers.
+With k 4 every probe is flat. With k 2 the held-out error turns up between updates 2500 and 5000. In neither is there a noise at which both conditions hold: where the telemetry alone reaches 1.5 cells, the schema's inputs give 1.16 with k 4 and about 1.3 with k 2. With k 8 the schema probe was still falling at update 6000, which the section above registers.
 
 ## F4: longer probes
 
