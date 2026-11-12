@@ -1086,3 +1086,68 @@ Registered after the first runs of the recurrent probe, at 6000 updates, and bef
 **The runs.** Block k 8 with σ_ν 0.02, 0.1, 0.25 and 0.5, the telemetry and the schema's inputs, 24000 updates. The perception probe at the defaults, 24000 updates. The settings with k 4 are flat by this rule. Those with k 2 have turned up, and their schema probe misses by 0.3 cells where the telemetry alone reaches 1.5, which overfitting of 0.01 cells does not explain. Neither is rerun. The threshold of 0.01 was set knowing that the default curves fall by 0.009 over the last 2000 updates; no reading at k 4 depends on it, since the schema's inputs there miss by 0.16 cells where the telemetry alone reaches 1.5.
 
 **A limit outside F4.** The spec asks that the telemetry resolve the probe offset of E1. A block of 8 leaves four values. If k 8 passes F4, that requirement is checked before the setup is frozen.
+
+## F4 with the recurrent probe
+
+`npm run target:f4 -- --episodes 8000`, the first 6400 episodes for training and the last 1600 held out, probe as registered: 64 hidden units, batches of 32 episodes, 6000 updates, a checkpoint every 500. Every run is repeated from the same generator stream, so a longer run begins with the shorter one.
+
+**At the default telemetry, k 4 and σ_ν 0.5:**
+
+| Source | Error at the last checkpoint, cells | Share within 1 cell | Lowest checkpoint, cells |
+| :-- | --: | --: | --: |
+| Clean frames | 6.02 | 0.055 | 5.93 |
+| Perception | 2.76 | 0.185 | 2.76 |
+| Commands | 8.08 | 0.046 | 7.82 |
+| Telemetry | 1.04 | 0.610 | 1.04 |
+| All schema inputs | 0.83 | 0.777 | 0.83 |
+| Time only | 8.67 | 0.016 | 8.12 |
+| Measurement (reference) | 6.85 | 0.020 | 6.71 |
+
+The schema's inputs give the position to 0.83 cells, where the flat probe gave 1.01 from the same episodes and the scratch filter 0.83. The clean frames, the perception summary and the commands each miss by more than 1.5 cells. **The telemetry alone gives 1.04 cells, so F4 fails at the defaults**, on the telemetry condition only. Both curves are flat: over the last 2000 updates the telemetry probe falls by 0.009 cells and the schema probe by 0.009.
+
+**The grid at 6000 updates.** Only the block size and the noise change. The clean frames, the perception summary and the commands do not depend on either, and their rows stay as above.
+
+| k | σ_ν | Telemetry, lowest checkpoint | All schema inputs, last checkpoint |
+| --: | --: | --: | --: |
+| 4 | 0.5 | 1.04 | 0.83 |
+| 4 | 0.75 | 1.20 | 0.94 |
+| 4 | 1 | 1.34 | 1.05 |
+| 4 | 1.25 | 1.49 | 1.16 |
+| 4 | 1.5 | 1.65 | 1.28 |
+| 2 | 0.75 | 1.14 | 1.02 |
+| 2 | 1 | 1.56 | 1.31 |
+| 2 | 1.25 | 2.06 | 1.61 |
+
+With k 4 every probe is flat. With k 2 the held-out error turns up after update 3000 to 4000. In neither is there a noise at which both conditions hold: where the telemetry alone reaches 1.5 cells, the schema's inputs give 1.16 with k 4 and about 1.3 with k 2. With k 8 the schema probe was still falling at update 6000, which the section above registers.
+
+## F4: longer probes
+
+Run under the rule registered above.
+
+**Perception at the defaults, 24000 updates.** Flat by update 12000. The lowest checkpoint of the whole run is 2.66 cells, so the condition on the perception summary holds.
+
+**Block k 8, 24000 updates.** The telemetry is the lowest checkpoint of everything run. The schema's inputs are shown at each number of updates the rule names, and the reading is the first of them where the probe is flat.
+
+| σ_ν | Telemetry, lowest | Schema inputs at 6000 | At 12000 | At 24000 | Flat at | Reading |
+| --: | --: | --: | --: | --: | --: | --: |
+| 0.5 | 2.43 | 1.38 | 1.32 | 1.31 | 12000 | 1.32 |
+| 0.25 | 2.23 | 1.32 | 1.23 | 1.22 | 24000 | 1.22 |
+| 0.1 | 2.08 | 1.25 | 1.16 | 1.11 | 12000 | 1.16 |
+| 0.02 | 1.83 | 1.14 | 1.07 | 1.03 | 24000 | 1.03 |
+| 0.01 | 1.77 | 1.13 | 1.05 | 1.01 | 24000 | 1.01 |
+| 0.005 | 1.71 | 1.12 | 1.03 | 0.99 | 24000 | 0.99 |
+
+The noises 0.01 and 0.005 were added after the first four. The telemetry curves with k 8 are noisy, moving by 0.05 cells and more between checkpoints, and by the letter of the rule they are not flat at update 24000. They were run on only with σ_ν 0.005, to 48000 updates: flat there, lowest checkpoint 1.71. At the other noises the schema condition already decides the outcome. With σ_ν 0.1 the schema probe meets the rule at 12000 and then falls by another 0.05 cells; neither number is within the bound.
+
+**By the letter, F4 passes with k 8 and σ_ν 0.005**: 0.994 cells from the schema's inputs, 1.71 from the telemetry alone, 5.93 from the clean frames, 2.66 from the perception summary and 7.82 from the commands. The margin on the first condition is 0.006 cells.
+
+**The margin is inside the noise of the estimate.** A check that is not a verdict: the same trained probe, with 10000 episodes and the same 6400 for training, scored on 3600 held-out episodes instead of 1600. It gives 1.001 cells from the schema's inputs, which makes 1.006 on the 2000 new episodes alone, and 1.71 from the telemetry. Between neighbouring checkpoints the schema probe's error moves by about 0.01 cells.
+
+What this shows:
+
+- **The telemetry alone, read by a recurrent probe, is a strong source.** With k 4 and k 2 the schema's inputs improve on it by about a fifth, at every noise. The bounds ask for a third.
+- **Only a coarse telemetry leaves room for the other inputs.** With k 8 the schema's inputs halve the error of the telemetry alone. But four blocks cap what the inputs give together at about 1 cell even when the telemetry is nearly free of noise.
+- **The pass sits on the bound.** It needs a telemetry noise of 0.005 against block sums of up to 9, it holds on one set of held-out episodes and not on another, and the spec's requirement that the telemetry resolve the probe offset of E1 has not been checked with four blocks.
+- **The schema probe with k 8 is limited by data.** Its training loss still falls at update 24000 while the held-out error stays. More episodes could lower the error; the rule above kept the episodes fixed.
+
+The setup is not frozen on this result. What counts as passing here is decided before any further run.
