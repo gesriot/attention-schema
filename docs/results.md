@@ -1072,3 +1072,17 @@ Registered before any run of the new probe. The conditions of F4 do not change: 
 **The probe's own settings.** If the held-out error of the telemetry or schema probe is still falling at the end, or has turned up, the number of updates, hidden units or episodes is changed until it is flat. This is judged on the error curves at the default telemetry, not on whether F4 passes, and every setting is recorded.
 
 **If it fails.** Only the telemetry block size and noise are varied, as before. If no setting passes, that is the result. The bounds of 1 and 1.5 cells are not moved without a separate decision registered before further runs.
+
+## Planned: longer probes where the error still falls
+
+Registered after the first runs of the recurrent probe, at 6000 updates, and before any longer run. The conditions of F4 and the bounds of 1 and 1.5 cells do not change.
+
+**What was seen.** At the default telemetry the telemetry and schema probes are flat by update 6000, and F4 fails there on the telemetry condition: 1.04 cells from the telemetry alone, 0.83 from the schema's inputs. Two probes are not flat. At k 8 the schema probe is still falling at the end: 1.30, 1.28 and 1.25 cells at the last three checkpoints with σ_ν 0.1, and 1.45, 1.43 and 1.38 with σ_ν 0.5, while the telemetry alone stays above 2.2. At the defaults the perception probe is still falling too, from 3.54 to 2.76 cells. The full tables follow with the longer runs.
+
+**Why this needs an amendment.** The registration let the probe's settings change only by the curves at the default telemetry. A probe that is still learning does not measure what its inputs give, at any setting. For the schema's inputs it overstates the error. For a single source it can pass an informative source for an uninformative one.
+
+**The rule.** At any telemetry setting and for any source, a probe is flat when its held-out error at the last checkpoint is at most 0.01 cells below its error 2000 updates earlier. A probe that is not flat is run with twice the updates: 12000, then 24000, then 48000. The generator stream is the same, so a shorter run is the beginning of a longer one and its checkpoints are read from it. Hidden units, batch, episodes and the split stay. The reading stays: for a single source the lowest checkpoint of everything run, for the schema's inputs the last checkpoint at the first of 6000, 12000, 24000 or 48000 updates where the probe is flat.
+
+**The runs.** Block k 8 with σ_ν 0.02, 0.1, 0.25 and 0.5, the telemetry and the schema's inputs, 24000 updates. The perception probe at the defaults, 24000 updates. The settings with k 4 are flat by this rule. Those with k 2 have turned up, and their schema probe misses by 0.3 cells where the telemetry alone reaches 1.5, which overfitting of 0.01 cells does not explain. Neither is rerun. The threshold of 0.01 was set knowing that the default curves fall by 0.009 over the last 2000 updates; no reading at k 4 depends on it, since the schema's inputs there miss by 0.16 cells where the telemetry alone reaches 1.5.
+
+**A limit outside F4.** The spec asks that the telemetry resolve the probe offset of E1. A block of 8 leaves four values. If k 8 passes F4, that requirement is checked before the setup is frozen.
