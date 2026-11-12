@@ -1151,3 +1151,30 @@ What this shows:
 - **The schema probe with k 8 is limited by data.** Its training loss still falls at update 24000 while the held-out error stays. More episodes could lower the error; the rule above kept the episodes fixed.
 
 The setup is not frozen on this result. What counts as passing here is decided before any further run.
+
+## Planned: more episodes for the F4 probes
+
+Registered after the longer probes and before any run on a larger corpus. The conditions of F4 and the bounds of 1 and 1.5 cells do not change. The pass with k 8 and σ_ν 0.005 is not taken as it stands: its margin is inside the noise of the estimate.
+
+**Why.** With k 8 the schema probe's training loss still falls at update 24000 while its held-out error stays, so the probe is limited by its 6400 training episodes and its error overstates what the inputs give. The same sign shows elsewhere. With k 4 and σ_ν 1.25 the training loss of the schema probe falls from 2.34 to 2.20 over the last 3000 updates while the held-out error moves from 1.17 to 1.16, and with k 2 the held-out error turns up. The rule for longer probes kept the episodes fixed.
+
+**The corpus.** 32000 episodes of the same neutral policy, seeds 6000000001 to 6000032000, with the same split: the first 25600 for training, the last 6400 held out. None of these held-out episodes has been generated before. The held-out episodes of the earlier runs are now in the training part.
+
+**The probe.** As registered: 64 hidden units, batches of 32 episodes, Adam at 0.001, a checkpoint every 500 updates, the same generator stream for every source. Every probe runs 96000 updates, which is as many passes over 25600 episodes as 24000 updates made over 6400.
+
+**Reading.** For a single source the lowest checkpoint of the run counts. For the schema's inputs the last checkpoint counts, at update 96000. For these runs this replaces the reading at the first number of updates where the probe is flat: with σ_ν 0.1 that rule stopped at 12000 while the error fell by another 0.05 cells. The reading by the earlier rule, over 6000, 12000, 24000, 48000 and 96000 updates, is reported beside it. A probe is flat as before, when its last checkpoint is at most 0.01 cells below the one 2000 updates earlier. A probe that is not flat at 96000 is run to 192000, but only at a setting where the other conditions hold; elsewhere the outcome is already decided.
+
+**The runs.**
+
+| k | σ_ν | Sources |
+| --: | :-- | :-- |
+| 8 | 0.5, 0.25, 0.1, 0.02, 0.01, 0.005 | Telemetry, all schema inputs |
+| 4 | 1.25, 1.5 | Telemetry, all schema inputs |
+| 2 | 1, 1.25 | Telemetry, all schema inputs |
+| – | – | Perception, commands |
+
+The settings with k 4 and k 2 are the nearest misses of the grid. The perception summary and the commands do not depend on the telemetry and are run once. The clean frames miss by 5.93 cells and take 4 GB at this size; they are run only if a setting meets the other conditions.
+
+**What counts.** A setting passes when, on this corpus, the schema's inputs give at most 1 cell and the telemetry, the perception summary, the commands and the clean frames each miss by at least 1.5. A reading within 0.02 cells of its bound is reported as on the bound, and the setup is not frozen on it without a separate decision. Two held-out sets of the earlier run differed by 0.012 cells. If the two readings of the schema's inputs fall on different sides of the bound, that is reported the same way.
+
+**After the runs.** Among passing settings the block nearest the default k 4 is taken, and within it the noise nearest the default 0.5. If the block is 8, the spec's requirement that the telemetry resolve the probe offset of E1 is checked before the setup is frozen. If no setting passes, that is the result of this route, and the corpus is not enlarged again without a separate decision. The other routes, the reading of the telemetry condition and a change to the telemetry itself, are registered separately.
