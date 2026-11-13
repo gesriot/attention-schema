@@ -1178,3 +1178,28 @@ The settings with k 4 and k 2 are the nearest misses of the grid. The perception
 **What counts.** A setting passes when, on this corpus, the schema's inputs give at most 1 cell and the telemetry, the perception summary, the commands and the clean frames each miss by at least 1.5. A reading within 0.02 cells of its bound is reported as on the bound, and the setup is not frozen on it without a separate decision. Two held-out sets of the earlier run differed by 0.012 cells. If the two readings of the schema's inputs fall on different sides of the bound, that is reported the same way.
 
 **After the runs.** Among passing settings the block nearest the default k 4 is taken, and within it the noise nearest the default 0.5. If the block is 8, the spec's requirement that the telemetry resolve the probe offset of E1 is checked before the setup is frozen. If no setting passes, that is the result of this route, and the corpus is not enlarged again without a separate decision. The other routes, the reading of the telemetry condition and a change to the telemetry itself, are registered separately.
+
+## F4 on the larger corpus
+
+Run as registered above: 32000 episodes, the first 25600 for training and the last 6400 held out, 96000 updates. The telemetry is read at the lowest checkpoint, the schema's inputs at update 96000, and beside it the reading of the earlier rule, at the first of 6000, 12000, 24000, 48000 or 96000 updates where the probe is flat.
+
+| k | σ_ν | Telemetry, lowest | Schema inputs at 96000 | Earlier rule | Flat at |
+| --: | --: | --: | --: | --: | --: |
+| 8 | 0.5 | 2.40 | 1.168 | 1.284 | 12000 |
+| 8 | 0.25 | 2.19 | 1.079 | 1.203 | 12000 |
+| 8 | 0.1 | 2.03 | 1.012 | 1.074 | 24000 |
+| 8 | 0.02 | 1.80 | 0.953 | 1.022 | 24000 |
+| 8 | 0.01 | 1.72 | 0.927 | 0.997 | 24000 |
+| 8 | 0.005 | 1.66 | 0.902 | 0.981 | 24000 |
+| 4 | 1.25 | 1.45 | 1.014 | 1.111 | 12000 |
+| 4 | 1.5 | 1.59 | 1.077 | 1.153 | 24000 |
+| 2 | 1 | 1.30 | 1.048 | 1.060 | 48000 |
+| 2 | 1.25 | 1.69 | 1.212 | 1.253 | 24000 |
+
+The perception summary misses by 2.61 cells at its lowest checkpoint and the commands by 7.71, at update 500. Every schema probe is flat at update 96000. The telemetry probe with k 8 and σ_ν 0.01 is not: it falls by 0.013 cells over the last 2000 updates, and the setting meets the other conditions, so it is run to 192000 updates. The telemetry probe with σ_ν 0.5 is not flat either, and is not run on, since its schema condition fails. The clean frames are run because some settings meet the other conditions.
+
+What this shows so far:
+
+- **No setting with k 4 or k 2 passes.** With k 4 the telemetry alone reaches 1.5 cells at σ_ν 1.5, where the schema's inputs give 1.08. With k 2 more data helped the telemetry alone most: 1.30 cells at σ_ν 1, against 1.56 on the smaller corpus.
+- **With k 8 more data took about 0.09 cells off the schema's inputs** at every noise, and much less off the telemetry alone. The schema's inputs are within 1 cell at σ_ν 0.02 and below, with the telemetry alone above 1.65 cells.
+- **The earlier rule stops early.** It reads the schema probe at 12000 or 24000 updates, after which the error falls by another 0.05 to 0.12 cells.
