@@ -1217,3 +1217,18 @@ Registered before the check is run. The spec asks that the telemetry resolve the
 **What counts.** The telemetry resolves an offset at a cue when the separation is at least 2, an error of at most 16% from one step. The requirement holds when the offset of 2 cells is resolved at no fewer than 90% of the cue cell and direction pairs. The offset of 1 cell and the default k 4 with σ_ν 0.5 are reported beside it. The settings with k 8 checked are σ_ν 0.02, 0.01 and 0.005.
 
 **If it fails.** k 8 is not frozen on F4 alone. What follows is decided separately.
+
+## E1 offset check with k 8
+
+Run as registered above, over every cue cell and direction where the offset stays in the field.
+
+| k | σ_ν | Offset of 1 cell resolved | Offset of 2 cells resolved | Median separation, 2 cells |
+| --: | --: | --: | --: | --: |
+| 8 | 0.02 | 0.600 | 0.714 | 5.9 |
+| 8 | 0.01 | 0.600 | 0.714 | 11.7 |
+| 8 | 0.005 | 0.600 | 0.714 | 23.4 |
+| 4 | 0.5 | 0.733 | 1.000 | 4.8 |
+
+**With k 8 the requirement fails**: the offset of 2 cells is resolved at 71% of the cue and direction pairs, against the 90% registered. The share does not move with the noise. At rest the resource covers about 21 cells, and where it does not reach the block boundary an offset changes the telemetry by less than 0.01, so lowering the noise to 0.005 does not reach it, while near the boundary every noise checked resolves it. The default k 4 with σ_ν 0.5 resolves every offset of 2 cells.
+
+So the route of a larger corpus gives no setting to freeze: the settings that meet the conditions of F4 have a telemetry too coarse for E1. By the registration the corpus is not enlarged again without a separate decision.
