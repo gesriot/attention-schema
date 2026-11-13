@@ -1203,3 +1203,17 @@ What this shows so far:
 - **No setting with k 4 or k 2 passes.** With k 4 the telemetry alone reaches 1.5 cells at σ_ν 1.5, where the schema's inputs give 1.08. With k 2 more data helped the telemetry alone most: 1.30 cells at σ_ν 1, against 1.56 on the smaller corpus.
 - **With k 8 more data took about 0.09 cells off the schema's inputs** at every noise, and much less off the telemetry alone. The schema's inputs are within 1 cell at σ_ν 0.02 and below, with the telemetry alone above 1.65 cells.
 - **The earlier rule stops early.** It reads the schema probe at 12000 or 24000 updates, after which the error falls by another 0.05 to 0.12 cells.
+
+**The remaining runs.** The clean frames miss by 5.78 cells at their lowest checkpoint. The telemetry probe with k 8 and σ_ν 0.01, run to 192000 updates, is flat there; its lowest checkpoint stays 1.72 cells, at update 94500, and the run repeats the shorter one up to update 96000.
+
+**By the registered conditions, three settings meet all of them**: k 8 with σ_ν 0.02, 0.01 and 0.005. Their margins on the schema's inputs, by the reading that counts, are 0.047, 0.073 and 0.098 cells. With σ_ν 0.02 the reading of the earlier rule, 1.022, falls on the other side of the bound, so that setting is on the bound. The registration does not say whether the margin of 0.02 cells applies to the reading of the earlier rule as well. If it does, all three are on the bound: 0.981, 0.997 and 1.022. That is left to a separate decision.
+
+## Planned: does telemetry with k 8 resolve the probe offset of E1
+
+Registered before the check is run. The spec asks that the telemetry resolve the probe offset of E1. The episodes of E1 do not exist yet and the spec does not give the size of the offset beyond "next to" the cue, so the check is made on the attention mechanism alone.
+
+**The check.** For each cue cell and each offset of 1 and 2 cells in each of the four directions that stays in the field, the resource map at rest is computed with the focus on the cue and with the focus on the offset cell: the priority of a constant command without noise or flashes, as at the start of an episode, without effort. The telemetry of each map is taken without noise. The separation is the Euclidean distance between the two telemetry vectors divided by σ_ν, so that one step of telemetry tells the two apart with an error of Φ(−d/2).
+
+**What counts.** The telemetry resolves an offset at a cue when the separation is at least 2, an error of at most 16% from one step. The requirement holds when the offset of 2 cells is resolved at no fewer than 90% of the cue cell and direction pairs. The offset of 1 cell and the default k 4 with σ_ν 0.5 are reported beside it. The settings with k 8 checked are σ_ν 0.02, 0.01 and 0.005.
+
+**If it fails.** k 8 is not frozen on F4 alone. What follows is decided separately.
