@@ -1248,3 +1248,23 @@ Registered by the owner's decision after the larger corpus and the E1 check, and
 **The runs.** k 4 with σ_ν 0.5, 0.75, 1, 1.25 and 1.5: the one-step telemetry. At 0.5, 0.75 and 1 also the schema's inputs and the telemetry history; at 1.25 and 1.5 these exist on this corpus. The one-step perception once. The clean frames and the commands stand as recorded on this corpus, 5.78 and 7.71 cells.
 
 **What counts.** A setting passes when the schema's inputs give at most 1 cell, the one-step telemetry, the one-step perception, the clean frames and the commands each miss by at least 1.5, and the telemetry resolves the E1 offset of 2 cells at no fewer than 90% of cue and direction pairs, as registered above. Among passing settings that are not on the bound, the noise nearest 0.5 is proposed for freezing, and the owner decides. If no setting with k 4 passes, this route stops there and what follows is decided separately.
+
+## F4 with the telemetry and perception read from one step
+
+Run as registered above, 32000 episodes, 96000 updates. Rerun at 8000 episodes, the new rows match the ones from the first run byte for byte. The one-step perception misses by 3.84 cells at its lowest checkpoint. The clean frames and the commands stand at 5.78 and 7.71.
+
+| k | σ_ν | Telemetry, one step | Schema inputs | Telemetry history | E1, 2 cells | Outcome |
+| --: | --: | --: | --: | --: | --: | :-- |
+| 4 | 0.5 | 1.43 | 0.782 | 1.01 | 1.000 | fails: one-step telemetry |
+| 4 | 0.75 | 1.93 | 0.874 | 1.16 | 0.857 | fails: E1 |
+| 4 | 1 | 2.50 | 0.945 | 1.30 | 0.750 | fails: E1 |
+| 4 | 1.25 | 3.10 | 1.014 | 1.45 | 0.429 | fails: schema inputs, E1 |
+| 4 | 1.5 | 3.67 | 1.077 | 1.59 | 0.429 | fails: schema inputs, E1 |
+
+The E1 column is the share of cue and direction pairs where one step of telemetry tells an offset of 2 cells from the cue apart, by the check registered for k 8; the registered bound is 0.9. Every probe that counts is flat at update 96000 except the one-step telemetry with σ_ν 1, which falls by 0.011 cells over the last 2000 updates; it is not run on, since that setting fails on E1.
+
+**No setting passes, so this route stops here.** The conditions of F4 alone hold with σ_ν 0.75 and 1, with wide margins: 0.13 and 0.06 cells on the schema's inputs, 0.43 and 1.00 on the one-step telemetry. At these noises one step of telemetry does not resolve an offset of 2 cells at enough cue positions. At σ_ν 0.5, where it does, the one-step telemetry gives the position to 1.43 cells.
+
+Beside it, not gating: the schema's inputs improve on the telemetry history by 0.23, 0.29 and 0.36 cells at σ_ν 0.5, 0.75 and 1, a fifth to a quarter of its error.
+
+The E1 check, its bound of 0.9 and its reading from one step were set when the check was registered for k 8, before this route. In E1 the offset is held for several steps, which a reading from one step does not use. Whether the check should change is decided separately, before any further run.
