@@ -1232,3 +1232,19 @@ Run as registered above, over every cue cell and direction where the offset stay
 **With k 8 the requirement fails**: the offset of 2 cells is resolved at 71% of the cue and direction pairs, against the 90% registered. The share does not move with the noise. At rest the resource covers about 21 cells, and where it does not reach the block boundary an offset changes the telemetry by less than 0.01, so lowering the noise to 0.005 does not reach it, while near the boundary every noise checked resolves it. The default k 4 with σ_ν 0.5 resolves every offset of 2 cells.
 
 So the route of a larger corpus gives no setting to freeze: the settings that meet the conditions of F4 have a telemetry too coarse for E1. By the registration the corpus is not enlarged again without a separate decision.
+
+## Planned: F4 with the telemetry and perception read from one step
+
+Registered by the owner's decision after the larger corpus and the E1 check, and before any run of this reading. It is chosen knowing the one-step diagnostic above, where a probe of one step of telemetry with k 4 missed by 1.49, 2.02 and 2.61 cells at σ_ν 0.5, 0.75 and 1. The bounds of 1 and 1.5 cells do not change.
+
+**Why.** The F4 row of the spec names the history of the frames and of the commands, but $\mathrm{pool}(z_t)$ and the telemetry without a history. The first registration read every source from its history. Under that reading no setting passes with a telemetry fine enough for E1.
+
+**What changes.** The probes of the perception summary alone and of the telemetry alone read only the current step: the same GRU probe, with each step its own sequence of one step from a zero state. The clean frames and the commands keep their history, and so do the schema's inputs together.
+
+**What this gives up.** The condition no longer says that the history of the telemetry alone falls short, and a recurrent schema can accumulate it. So at every setting the telemetry history probe is reported beside the one-step probe, with the gain of the schema's inputs over it. These numbers do not gate.
+
+**Corpus and probe.** As on the larger corpus: 32000 episodes, the first 25600 for training, 96000 updates. A single source reads its lowest checkpoint, the schema's inputs their last at update 96000. A probe that is not flat by the earlier rule at 96000 is run to 192000 only at a setting where the other conditions hold. A reading that counts and lies within 0.02 cells of its bound is on the bound, and the setup is not frozen on it without a separate decision.
+
+**The runs.** k 4 with σ_ν 0.5, 0.75, 1, 1.25 and 1.5: the one-step telemetry. At 0.5, 0.75 and 1 also the schema's inputs and the telemetry history; at 1.25 and 1.5 these exist on this corpus. The one-step perception once. The clean frames and the commands stand as recorded on this corpus, 5.78 and 7.71 cells.
+
+**What counts.** A setting passes when the schema's inputs give at most 1 cell, the one-step telemetry, the one-step perception, the clean frames and the commands each miss by at least 1.5, and the telemetry resolves the E1 offset of 2 cells at no fewer than 90% of cue and direction pairs, as registered above. Among passing settings that are not on the bound, the noise nearest 0.5 is proposed for freezing, and the owner decides. If no setting with k 4 passes, this route stops there and what follows is decided separately.
