@@ -232,7 +232,7 @@ Forbidden simplifications: a frame on the screen that does not affect processing
 
 - The measurement $x_t$ (perceptual module only; the controller does not read the frame).
 - Its own commands $u_{t-1}$, $f_{t-1}$, $m_{t-1}$ (efference copy).
-- Telemetry $p_t$: a coarse noisy map of the resource, $p_t = \mathrm{pool}_k(a_t) + \nu_t$, where $k$ is the block size. The values of $k$ and $\nu_t$ are tuned on control F4. The resolution must be enough to distinguish the probe offset in E1.
+- Telemetry $p_t$: a coarse noisy map of the resource, $p_t = \mathrm{pool}_k(a_t) + \nu_t$, where $k$ is the block size. It arrives every $m$-th step, starting from the first. On the other steps the agent receives no telemetry and knows that it has none. The values of $k$, $\nu_t$ and $m$ are tuned on control F4. The resolution must be enough to distinguish the probe offset in E1.
 - Its own recurrent state from the previous step.
 - Reward for the external task during training.
 
@@ -593,7 +593,7 @@ Measure immediately, on the same step: the direction of the next command and the
 
 The effect must be directional: the sign of the shift depends on the side of the substitution. General degradation does not count. After a new command the observations naturally diverge, so immediate and delayed effects are analyzed separately.
 
-**2B. Hidden perturbation of attention.** The resource is shifted by an impulse, telemetry is blocked for one step, and the schema does not change.
+**2B. Hidden perturbation of attention.** The resource is shifted by an impulse, telemetry is blocked on the next step on which it would arrive, and the schema does not change.
 
 Measure: whether the mismatch is detected, what happens next (control is corrected or the model is updated[^4]), and how many steps it takes. This separates monitoring from remembering commands. **Expectation:** C1 keeps assuming the focus is where it was sent, while the schema detects the mismatch through telemetry and consequences.
 

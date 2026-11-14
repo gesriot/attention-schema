@@ -1268,3 +1268,19 @@ The E1 column is the share of cue and direction pairs where one step of telemetr
 Beside it, not gating: the schema's inputs improve on the telemetry history by 0.23, 0.29 and 0.36 cells at σ_ν 0.5, 0.75 and 1, a fifth to a quarter of its error.
 
 The E1 check, its bound of 0.9 and its reading from one step were set when the check was registered for k 8, before this route. In E1 the probe comes a few steps after the cue, so more than one step of telemetry may bear on the offset, which a reading from one step does not use. Whether the check should change is decided separately, before any further run.
+
+## Planned: telemetry every m-th step
+
+Registered by the owner's decision after the one-step reading and before any run with this telemetry. This changes the world, and the spec is changed with it: the telemetry arrives every $m$-th step. It is chosen knowing that with telemetry on every step its history gives the position to 1.01 cells at the defaults on the larger corpus, and the schema's inputs to 0.78.
+
+**Why.** With telemetry on every step, its history alone gives the position nearly as well as all the schema's inputs together. The requirement that no single source suffices then holds only with a telemetry too coarse or too noisy for E1. With gaps between telemetry steps, the position there has to be carried by the commands and the perception, which is what the schema's inputs give together and the telemetry alone does not.
+
+**What changes.** The telemetry is computed and its noise drawn on every step, as now. On a step where $t - 1$ is not a multiple of $m$ its values are replaced by zeros. With $m$ above 1 the telemetry has one more value at the end, 1 on a step with telemetry and 0 on one without. With $m$ 1 the world is the present one. The block k 4 and the noise σ_ν 0.5 stay: at these the telemetry resolves the E1 offset of 2 cells at every cue and direction pair, and a step with telemetry carries what it carries now.
+
+**Reading.** The first registration, unchanged: every source from its history, at most 1 cell from the schema's inputs, at least 1.5 from each single source. As on the larger corpus: 32000 episodes, the first 25600 for training, 96000 updates, the lowest checkpoint for a single source and the last at update 96000 for the schema's inputs. A probe that is not flat at 96000 is run to 192000 only at a setting where the other conditions hold. A reading that counts and lies within 0.02 cells of its bound is on the bound, and the setup is not frozen on it without a separate decision.
+
+**The runs.** $m$ 2, 3 and 4: the telemetry and the schema's inputs. The perception summary, the commands and the clean frames do not depend on the telemetry and stand at 2.61, 7.71 and 5.78 cells.
+
+**What counts.** A setting passes when the schema's inputs give at most 1 cell and the telemetry at least 1.5. Among passing settings that are not on the bound, the smallest $m$ is proposed for freezing, and the owner decides. If none passes, this route stops there, and k and σ_ν are not varied with $m$ without a separate decision.
+
+**Outside F4.** With $m$ above 1 the probe stimulus of E1 can fall on a step without telemetry. Whether E1 times its probe to telemetry steps is decided when E1 is built. In E2B the telemetry is now blocked on the next step on which it would arrive.
