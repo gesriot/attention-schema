@@ -18,8 +18,10 @@ export const f4FirstSeed = 6000000001;
 export const sources = [
   "frames",
   "perception",
+  "perceptionStep",
   "commands",
   "telemetry",
+  "telemetryStep",
   "schema",
   "context",
   "measurement",
@@ -150,7 +152,15 @@ export function sourceInputs(corpus: Corpus, source: Source): Inputs {
       ? []
       : source === "schema"
         ? [block("perception"), block("commands"), block("telemetry")]
-        : [block(source)];
+        : [
+            block(
+              source === "perceptionStep"
+                ? "perception"
+                : source === "telemetryStep"
+                  ? "telemetry"
+                  : source,
+            ),
+          ];
   return {
     blocks,
     steps: corpus.steps,
@@ -238,6 +248,39 @@ export function createProbeBatch(model: Probe, size: number, steps: number): Pro
     outputGradient: new Float64Array(size * steps * model.gru.hidden),
     gradient: new Float64Array(model.parameters.length),
   };
+}
+
+export function createSourceBatch(
+  model: Probe,
+  episodes: number,
+  steps: number,
+  source: Source,
+): ProbeBatch {
+  // Keep episode-major sample order; only the recurrent sequence boundaries change.
+  const singleStep = source === "perceptionStep" || source === "telemetryStep";
+  return createProbeBatch(model, singleStep ? episodes * steps : episodes, singleStep ? 1 : steps);
+}
+
+export function sampleProbeBatch(
+  data: ProbeData,
+  batch: ProbeBatch,
+  rows: Uint8Array,
+  cols: Uint8Array,
+  rng: Rng,
+): void {
+  const { steps, width } = data.inputs;
+  // One draw per episode, then all its steps in ascending order, for both layouts.
+  const episodes = rows.length / steps;
+  for (let sequence = 0; sequence < episodes; sequence++) {
+    const episode = nextInt(rng, data.trainEpisodes);
+    for (let step = 0; step < steps; step++) {
+      const sample = episode * steps + step;
+      const destination = sequence * steps + step;
+      writeInput(data.inputs, sample, batch.recurrent.inputs, destination * width);
+      rows[destination] = data.rowLabels[sample]!;
+      cols[destination] = data.colLabels[sample]!;
+    }
+  }
 }
 
 export function forwardProbe(model: Probe, batch: ProbeBatch): Float64Array {
@@ -372,24 +415,15 @@ export function fitProbe(
   const rng = createRng(1, streams.probe);
   const model = createProbe(width, config.f4Hidden, config.fieldSize, rng);
   const adam = createAdam(model.parameters.length);
-  const batch = createProbeBatch(model, config.f4BatchSize, steps);
-  const evaluation = createProbeBatch(model, 1, steps);
+  const batch = createSourceBatch(model, config.f4BatchSize, steps, source);
+  const evaluation = createSourceBatch(model, 1, steps, source);
   const rows = new Uint8Array(config.f4BatchSize * steps);
   const cols = new Uint8Array(rows.length);
   const recentLosses = new Float64Array(checkpointInterval);
   let bestError = Infinity;
   let final = { meanError: Infinity, withinOne: 0 };
   for (let update = 1; update <= config.f4Updates; update++) {
-    for (let sequence = 0; sequence < config.f4BatchSize; sequence++) {
-      const episode = nextInt(rng, data.trainEpisodes);
-      for (let step = 0; step < steps; step++) {
-        const sample = episode * steps + step;
-        const destination = sequence * steps + step;
-        writeInput(data.inputs, sample, batch.recurrent.inputs, destination * width);
-        rows[destination] = data.rowLabels[sample]!;
-        cols[destination] = data.colLabels[sample]!;
-      }
-    }
+    sampleProbeBatch(data, batch, rows, cols, rng);
     forwardProbe(model, batch);
     const loss = probeGradient(model, batch, rows, cols);
     if (!Number.isFinite(loss)) throw new Error("Потери зонда перестали быть конечными");

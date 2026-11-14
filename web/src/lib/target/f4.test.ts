@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createRng, nextInt, nextUnit } from "../rng.ts";
+import { adamStep, createAdam } from "../nn/adam.ts";
 import { configure, defaults } from "./config.ts";
 import { applyAction, createEpisode } from "./episode.ts";
 import { createNeutralPolicy } from "./policies.ts";
@@ -8,6 +9,8 @@ import { createPerception, poolPerception, updatePerception } from "./perception
 import {
   createProbe,
   createProbeBatch,
+  createSourceBatch,
+  sampleProbeBatch,
   forwardProbe,
   probeGradient,
   collectCorpus,
@@ -37,7 +40,7 @@ function input(corpus: Corpus, source: (typeof sources)[number], sample: number)
 
 test("each source contains one step and schema concatenates exactly its three inputs", () => {
   const corpus = collectCorpus(defaults, 2);
-  const widths = [512, 18, 10, 16, 44, 30, 512];
+  const widths = [512, 18, 18, 10, 16, 16, 44, 30, 512];
   sources.forEach((source, index) =>
     assert.equal(sourceInputs(corpus, source).width, widths[index]),
   );
@@ -124,36 +127,40 @@ test("probe scoring uses continuous centers instead of rounded class labels", ()
   });
 });
 
-test("joint row and column loss differentiates every GRU and readout parameter", () => {
-  const rng = createRng(10, 22);
-  const expected = createRng(10, 22);
-  const model = createProbe(3, 4, 5, rng);
-  for (let i = 0; i < 3 * 4 * (3 + 4) + 2 * 5 * 4; i++) nextUnit(expected);
-  assert.deepEqual(rng, expected);
-  assert.ok(model.biases.every((value) => value === 0));
-  assert.equal(model.gru.parameters.buffer, model.parameters.buffer);
-  const batch = createProbeBatch(model, 2, 5);
-  batch.recurrent.inputs.set(Float64Array.from(batch.recurrent.inputs, () => nextUnit(rng) - 0.5));
-  const rows = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
-  const cols = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
-  const loss = () => {
-    forwardProbe(model, batch);
-    return probeGradient(model, batch, rows, cols);
-  };
-  loss();
-  const gradient = batch.gradient.slice();
-  for (let index = 0; index < model.parameters.length; index++) {
-    const value = model.parameters[index]!;
-    model.parameters[index] = value + 1e-5;
-    const plus = loss();
-    model.parameters[index] = value - 1e-5;
-    const minus = loss();
-    model.parameters[index] = value;
-    assert.ok(Math.abs(gradient[index]! - (plus - minus) / 2e-5) < 1e-8, `parameter ${index}`);
-  }
-  model.parameters.fill(0);
-  assert.ok(Math.abs(loss() - 2 * Math.log(5)) < 1e-14);
-});
+for (const steps of [1, 5]) {
+  test(`joint row and column loss differentiates every parameter at sequence length ${steps}`, () => {
+    const rng = createRng(10, 22);
+    const expected = createRng(10, 22);
+    const model = createProbe(3, 4, 5, rng);
+    for (let i = 0; i < 3 * 4 * (3 + 4) + 2 * 5 * 4; i++) nextUnit(expected);
+    assert.deepEqual(rng, expected);
+    assert.ok(model.biases.every((value) => value === 0));
+    assert.equal(model.gru.parameters.buffer, model.parameters.buffer);
+    const batch = createProbeBatch(model, 10 / steps, steps);
+    batch.recurrent.inputs.set(
+      Float64Array.from(batch.recurrent.inputs, () => nextUnit(rng) - 0.5),
+    );
+    const rows = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
+    const cols = Uint8Array.from({ length: 10 }, () => nextInt(rng, 5));
+    const loss = () => {
+      forwardProbe(model, batch);
+      return probeGradient(model, batch, rows, cols);
+    };
+    loss();
+    const gradient = batch.gradient.slice();
+    for (let index = 0; index < model.parameters.length; index++) {
+      const value = model.parameters[index]!;
+      model.parameters[index] = value + 1e-5;
+      const plus = loss();
+      model.parameters[index] = value - 1e-5;
+      const minus = loss();
+      model.parameters[index] = value;
+      assert.ok(Math.abs(gradient[index]! - (plus - minus) / 2e-5) < 1e-8, `parameter ${index}`);
+    }
+    model.parameters.fill(0);
+    assert.ok(Math.abs(loss() - 2 * Math.log(5)) < 1e-14);
+  });
+}
 
 function toyData(informative: boolean, context = false): ProbeData {
   const episodes = 256;
@@ -211,7 +218,7 @@ test("the recurrent probe accumulates clipped moves and blank input remains near
 test("source selection preserves data, result rows and stdout across worker counts and completion orders", async () => {
   const config = configure({ f4Hidden: 4, f4BatchSize: 2, f4Updates: 2 });
   const corpus = collectCorpus(config, 2);
-  const subset = collectCorpus(config, 2, ["schema", "context"]);
+  const subset = collectCorpus(config, 2, ["schema", "context", "perceptionStep", "telemetryStep"]);
   assert.equal(subset.frames.length, 0);
   assert.equal(subset.measurement.length, 0);
   for (const key of [
@@ -226,11 +233,26 @@ test("source selection preserves data, result rows and stdout across worker coun
   assert.throws(() => sourceInputs(subset, "frames"), /не сохранён/);
   const serial = await runProbes(config, corpus, 1);
   const parallel = await runProbes(config, corpus, 3);
-  const selected = await runProbes(config, subset, 2, undefined, ["context", "schema"]);
+  const selected = await runProbes(config, subset, 2, undefined, [
+    "context",
+    "schema",
+    "telemetryStep",
+    "perceptionStep",
+  ]);
+  const oldSources = sources.filter(
+    (source) => source !== "perceptionStep" && source !== "telemetryStep",
+  );
+  const oldOnly = await runProbes(config, corpus, 2, undefined, oldSources);
+  assert.deepEqual(
+    oldOnly,
+    serial.filter((result) => oldSources.some((source) => source === result.source)),
+  );
   assert.deepEqual(serial, parallel);
   assert.deepEqual(
     selected,
-    serial.filter((result) => ["schema", "context"].includes(result.source)),
+    serial.filter((result) =>
+      ["schema", "context", "perceptionStep", "telemetryStep"].includes(result.source),
+    ),
   );
   assert.deepEqual(
     serial.map((result) => result.source),
@@ -246,11 +268,25 @@ test("source selection preserves data, result rows and stdout across worker coun
 });
 
 test("source parsing validates names and orders selected rows canonically", () => {
-  assert.deepEqual(parseF4Options([]).sources, [...sources]);
+  assert.deepEqual(parseF4Options([]).sources, [
+    "frames",
+    "perception",
+    "perceptionStep",
+    "commands",
+    "telemetry",
+    "telemetryStep",
+    "schema",
+    "context",
+    "measurement",
+  ]);
   assert.deepEqual(parseF4Options(["--sources", "schema,telemetry,schema"]).sources, [
     "telemetry",
     "schema",
   ]);
+  assert.deepEqual(
+    parseF4Options(["--sources", "telemetryStep,schema,perceptionStep,telemetry"]).sources,
+    ["perceptionStep", "telemetry", "telemetryStep", "schema"],
+  );
   assert.equal(parseF4Options(["--episodes", "10", "--sources", "commands"]).episodes, 10);
   for (const value of ["", " ", "unknown", ",schema", "schema,", "schema,,commands"])
     assert.throws(() => parseF4Options(["--sources", value]));
@@ -305,4 +341,120 @@ test("new settings validate and attention event summaries retain their exact val
       effortRate: 0.32222222222222224,
     },
   });
+});
+
+test("one-step sources share the original input arrays and contain exactly the same values", () => {
+  const corpus = collectCorpus(defaults, 3, ["perceptionStep", "telemetryStep"]);
+  for (const [history, single] of [
+    ["perception", "perceptionStep"],
+    ["telemetry", "telemetryStep"],
+  ] as const) {
+    const original = sourceInputs(corpus, history);
+    const current = sourceInputs(corpus, single);
+    assert.equal(current.steps, original.steps);
+    assert.equal(current.width, original.width);
+    assert.equal(current.blocks[0]!.values, corpus[history]);
+    for (let sample = 0; sample < original.samples; sample++)
+      assert.deepEqual(input(corpus, single, sample), input(corpus, history, sample));
+  }
+});
+
+test("one-step logits are independent while recurrent logits retain earlier inputs", () => {
+  const corpus = collectCorpus(defaults, 2, ["perceptionStep", "telemetryStep"]);
+  const changed = 5;
+  for (const [history, single] of [
+    ["perception", "perceptionStep"],
+    ["telemetry", "telemetryStep"],
+  ] as const) {
+    const inputs = sourceInputs(corpus, history);
+    const model = createProbe(inputs.width, 4, defaults.fieldSize, createRng(1, 22));
+    for (const source of [history, single]) {
+      const batch = createSourceBatch(model, 2, corpus.steps, source);
+      assert.equal(batch.recurrent.size, source === single ? 2 * corpus.steps : 2);
+      assert.equal(batch.recurrent.steps, source === single ? 1 : corpus.steps);
+      for (let sample = 0; sample < inputs.samples; sample++)
+        writeInput(inputs, sample, batch.recurrent.inputs, sample * inputs.width);
+      const before = forwardProbe(model, batch).slice();
+      batch.recurrent.inputs[changed * inputs.width] =
+        batch.recurrent.inputs[changed * inputs.width]! + 0.5;
+      const after = forwardProbe(model, batch);
+      for (let sample = 0; sample < inputs.samples; sample++) {
+        const start = sample * 2 * model.classes;
+        const a = before.slice(start, start + 2 * model.classes);
+        const b = after.slice(start, start + 2 * model.classes);
+        if (sample === changed || (source === history && sample > changed && sample < corpus.steps))
+          assert.notDeepEqual(a, b);
+        else assert.deepEqual(a, b);
+      }
+      if (source === single) {
+        // One forward call for a whole evaluation episode must equal separate calls per step.
+        const alone = createProbeBatch(model, 1, 1);
+        for (let sample = 0; sample < inputs.samples; sample++) {
+          alone.recurrent.inputs.set(
+            batch.recurrent.inputs.subarray(sample * inputs.width, (sample + 1) * inputs.width),
+          );
+          assert.deepEqual(
+            forwardProbe(model, alone),
+            after.subarray(sample * 2 * model.classes, (sample + 1) * 2 * model.classes),
+          );
+        }
+      }
+    }
+  }
+});
+
+test("both sequence layouts sample the same episodes and consume exactly one draw per episode per update", () => {
+  const config = configure({ f4Hidden: 4, f4BatchSize: 3, f4Updates: 3 });
+  const corpus = collectCorpus(config, 3, ["perceptionStep", "telemetryStep"]);
+  for (const [history, single] of [
+    ["perception", "perceptionStep"],
+    ["telemetry", "telemetryStep"],
+  ] as const) {
+    const states = [history, single].map((source) => {
+      const data = probeData(config, corpus, source);
+      const rng = createRng(1, 22);
+      const model = createProbe(data.inputs.width, config.f4Hidden, config.fieldSize, rng);
+      return {
+        data,
+        rng,
+        model,
+        adam: createAdam(model.parameters.length),
+        batch: createSourceBatch(model, config.f4BatchSize, corpus.steps, source),
+        rows: new Uint8Array(config.f4BatchSize * corpus.steps),
+        cols: new Uint8Array(config.f4BatchSize * corpus.steps),
+      };
+    });
+    assert.deepEqual(states[0]!.model.parameters, states[1]!.model.parameters);
+    assert.deepEqual(states[0]!.rng, states[1]!.rng);
+    const expected = { ...states[0]!.rng };
+    for (let update = 0; update < config.f4Updates; update++) {
+      const episodes = Array.from({ length: config.f4BatchSize }, () =>
+        nextInt(expected, states[0]!.data.trainEpisodes),
+      );
+      for (const state of states) {
+        sampleProbeBatch(state.data, state.batch, state.rows, state.cols, state.rng);
+        assert.deepEqual(state.rng, expected);
+        for (let sequence = 0; sequence < episodes.length; sequence++) {
+          for (let step = 0; step < corpus.steps; step++) {
+            const destination = sequence * corpus.steps + step;
+            const sample = episodes[sequence]! * corpus.steps + step;
+            const width = state.data.inputs.width;
+            assert.deepEqual(
+              state.batch.recurrent.inputs.subarray(destination * width, (destination + 1) * width),
+              input(corpus, history, sample),
+            );
+            assert.equal(state.rows[destination], corpus.rowLabels[sample]);
+            assert.equal(state.cols[destination], corpus.colLabels[sample]);
+          }
+        }
+        forwardProbe(state.model, state.batch);
+        assert.ok(Number.isFinite(probeGradient(state.model, state.batch, state.rows, state.cols)));
+        adamStep(state.model.parameters, state.batch.gradient, state.adam);
+        assert.deepEqual(state.rng, expected);
+      }
+      assert.deepEqual(states[0]!.batch.recurrent.inputs, states[1]!.batch.recurrent.inputs);
+      assert.deepEqual(states[0]!.rows, states[1]!.rows);
+      assert.deepEqual(states[0]!.cols, states[1]!.cols);
+    }
+  }
 });

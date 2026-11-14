@@ -15,8 +15,10 @@ import { runProbes } from "./f4-workers.ts";
 const sourceNames: Record<Source, string> = {
   frames: "Чистые кадры",
   perception: "Восприятие",
+  perceptionStep: "Восприятие, один шаг",
   commands: "Команды",
   telemetry: "Телеметрия",
+  telemetryStep: "Телеметрия, один шаг",
   schema: "Все входы схемы",
   context: "Только время",
   measurement: "Измерение (справочно)",
