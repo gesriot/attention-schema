@@ -43,7 +43,7 @@ function observe(episode: Episode, previous: Action): Observation {
     previousEffort: previous.effort,
     previousPaddleMove: previous.paddleMove,
     paddle: episode.paddle,
-    telemetry: telemetry(config, truth.attention.resource, rng.telemetry),
+    telemetry: telemetry(config, truth.attention.resource, truth.world.t, rng.telemetry),
   };
 }
 

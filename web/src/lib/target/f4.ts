@@ -13,6 +13,7 @@ import { streams, type Config } from "./config.ts";
 import { applyAction, createEpisode, type Observation } from "./episode.ts";
 import { createNeutralPolicy } from "./policies.ts";
 import { createPerception, poolPerception, updatePerception } from "./perception.ts";
+import { telemetryWidth } from "./measurement.ts";
 
 export const f4FirstSeed = 6000000001;
 export const sources = [
@@ -77,18 +78,18 @@ export function collectCorpus(
   if (config.fieldSize > 256) throw new Error("Метки зондов допускают не более 256 классов");
   const steps = config.episodeSteps;
   const cells = config.fieldSize * config.fieldSize;
-  const telemetryWidth = (config.fieldSize / config.k) ** 2;
+  const width = telemetryWidth(config);
   const samples = episodes * steps;
   // Store individual frames once. Read-only shared buffers avoid copying the corpus per worker.
   const corpus: Corpus = {
     episodes,
     steps,
     cells,
-    telemetryWidth,
+    telemetryWidth: width,
     frames: sharedFloats(selected.includes("frames") ? samples * cells * 2 : 0),
     perception: sharedFloats(samples * 18),
     commands: sharedFloats(samples * 10),
-    telemetry: sharedFloats(samples * telemetryWidth),
+    telemetry: sharedFloats(samples * width),
     measurement: sharedFloats(selected.includes("measurement") ? samples * cells * 2 : 0),
     centers: sharedFloats(samples * 2),
     rowLabels: new Uint8Array(new SharedArrayBuffer(samples)),
@@ -109,7 +110,7 @@ export function collectCorpus(
         corpus.measurement.set(observation.measurement, sample * cells * 2);
       corpus.perception.set(poolPerception(config, perception), sample * 18);
       corpus.commands.set(encodeCommands(observation, step === 0), sample * 10);
-      corpus.telemetry.set(observation.telemetry, sample * telemetryWidth);
+      corpus.telemetry.set(observation.telemetry, sample * width);
       // Evaluator truth supplies labels and continuous scoring coordinates, never features.
       const center = episode.truth.attention.center;
       corpus.centers[sample * 2] = center.row;

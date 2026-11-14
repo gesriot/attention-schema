@@ -14,12 +14,19 @@ test("all parameters can be overridden and invalid or unknown settings are rejec
   assert.equal(options.config.sigmaEta, 0);
   assert.equal(options.config.pFlash, 0.2);
   assert.equal(options.config.k, 8);
+  assert.equal(parseOptions(["--set", "telemetryPeriod=3"]).config.telemetryPeriod, 3);
+  assert.equal(parseOptions(["--set", "telemetryPeriod=30"]).config.telemetryPeriod, 30);
+  assert.equal(parameters[parameters.indexOf("sigmaNu") + 1], "telemetryPeriod");
   for (const args of [
     ["--set", "unknown=1"],
     ["--set", "toString=1"],
     ["--set", "pMove=-1"],
     ["--set", "rho=1"],
     ["--set", "k=3"],
+    ["--set", "telemetryPeriod=0"],
+    ["--set", "telemetryPeriod=1.5"],
+    ["--set", "telemetryPeriod=31"],
+    ["--set", "episodeSteps=20,hueJumpMax=20,telemetryPeriod=21"],
     ["--set", "sigmaEta=NaN"],
     ["--set", "sigmaEta=Infinity"],
     ["--set", "sigmaEta="],

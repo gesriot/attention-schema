@@ -5,6 +5,7 @@ import { adamStep, createAdam } from "../nn/adam.ts";
 import { configure, defaults } from "./config.ts";
 import { applyAction, createEpisode } from "./episode.ts";
 import { createNeutralPolicy } from "./policies.ts";
+import { telemetryWidth } from "./measurement.ts";
 import { createPerception, poolPerception, updatePerception } from "./perception.ts";
 import {
   createProbe,
@@ -455,6 +456,40 @@ test("both sequence layouts sample the same episodes and consume exactly one dra
       assert.deepEqual(states[0]!.batch.recurrent.inputs, states[1]!.batch.recurrent.inputs);
       assert.deepEqual(states[0]!.rows, states[1]!.rows);
       assert.deepEqual(states[0]!.cols, states[1]!.cols);
+    }
+  }
+});
+
+test("periodic telemetry enters the corpus and schema with its presence flag and no step number", () => {
+  const config = parseF4Options(["--set", "telemetryPeriod=3"]).config;
+  const corpus = collectCorpus(config, 3, ["telemetry", "telemetryStep", "schema"]);
+  const original = collectCorpus(defaults, 3, ["telemetry", "schema"]);
+  assert.equal(corpus.telemetryWidth, telemetryWidth(config));
+  assert.equal(corpus.telemetryWidth, 17);
+  assert.equal(corpus.telemetry.length, 3 * config.episodeSteps * 17);
+  for (const source of ["telemetry", "telemetryStep"] as const)
+    assert.equal(sourceInputs(corpus, source).width, 17);
+  assert.equal(sourceInputs(corpus, "schema").width, 45);
+  for (const key of ["perception", "commands", "centers", "rowLabels", "colLabels"] as const)
+    assert.deepEqual(corpus[key], original[key]);
+  for (let episodeIndex = 0; episodeIndex < corpus.episodes; episodeIndex++) {
+    const seed = f4FirstSeed + episodeIndex;
+    const episode = createEpisode(config, seed);
+    const policy = createNeutralPolicy(config, seed);
+    for (let step = 0; step < config.episodeSteps; step++) {
+      const sample = episodeIndex * config.episodeSteps + step;
+      const values = input(corpus, "telemetry", sample);
+      assert.deepEqual(values, episode.observation.telemetry);
+      assert.deepEqual(input(corpus, "telemetryStep", sample), values);
+      if (step % 3 === 0) {
+        assert.deepEqual(values.subarray(0, 16), input(original, "telemetry", sample));
+        assert.equal(values[16], 1);
+      } else assert.deepEqual(values, new Float64Array(17));
+      assert.deepEqual(
+        [...input(corpus, "schema", sample)],
+        [...input(corpus, "perception", sample), ...input(corpus, "commands", sample), ...values],
+      );
+      applyAction(episode, policy(episode.observation));
     }
   }
 });

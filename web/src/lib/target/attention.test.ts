@@ -104,7 +104,7 @@ test("measurement handles zero noise, fully enhanced cells and uniform C0 noise"
 test("noiseless telemetry gives block sums and preserves total resource", () => {
   const config = configure({ sigmaNu: 0 });
   const resource = Float64Array.from({ length: 256 }, (_, i) => i / 256);
-  const pooled = telemetry(config, resource, createRng(7, 20));
+  const pooled = telemetry(config, resource, 1, createRng(7, 20));
   assert.equal(pooled.length, 16);
   const expected = new Float64Array(16);
   for (let row = 0; row < 16; row++) {

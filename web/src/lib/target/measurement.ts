@@ -21,10 +21,20 @@ export function measure(
   return measurement;
 }
 
-export function telemetry(config: Config, resource: Float64Array, rng: Rng): Float64Array {
+export function telemetryWidth(config: Config): number {
+  return (config.fieldSize / config.k) ** 2 + (config.telemetryPeriod > 1 ? 1 : 0);
+}
+
+export function telemetry(
+  config: Config,
+  resource: Float64Array,
+  step: number,
+  rng: Rng,
+): Float64Array {
   const blocks = config.fieldSize / config.k;
-  const values = new Float64Array(blocks * blocks);
+  const values = new Float64Array(telemetryWidth(config));
   // Row-major blocks, row-major cells within each block, then one normal per block.
+  // Draw on every step before masking, so the period never changes stream consumption.
   for (let br = 0; br < blocks; br++) {
     for (let bc = 0; bc < blocks; bc++) {
       let sum = 0;
@@ -35,6 +45,10 @@ export function telemetry(config: Config, resource: Float64Array, rng: Rng): Flo
       }
       values[br * blocks + bc] = sum + config.sigmaNu * nextNormal(rng);
     }
+  }
+  if (config.telemetryPeriod > 1) {
+    if ((step - 1) % config.telemetryPeriod === 0) values[values.length - 1] = 1;
+    else values.fill(0);
   }
   return values;
 }

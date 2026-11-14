@@ -34,6 +34,7 @@ export const defaults = {
   alpha: 0.95,
   k: 4,
   sigmaNu: 0.5,
+  telemetryPeriod: 1,
   resourceRadius: 1,
   effortThreshold: 0.6,
   captureThreshold: 0.3,
@@ -94,6 +95,7 @@ export function validateConfig(config: Config): void {
     "paddleStart",
     "catchRadius",
     "k",
+    "telemetryPeriod",
     "resourceRadius",
     "gateRadius",
     "maxMissed",
@@ -118,6 +120,8 @@ export function validateConfig(config: Config): void {
     if (config[name] < 1 || config[name] > config.fieldSize) fail(name);
   }
   if (config.fieldSize % config.k !== 0) fail("k");
+  if (config.telemetryPeriod < 1 || config.telemetryPeriod > config.episodeSteps)
+    fail("telemetryPeriod");
   if (
     config.paddleMax >= config.fieldSize ||
     config.paddleMin > config.paddleStart ||

@@ -45,6 +45,7 @@ const labels: Record<Parameter, string> = {
   alpha: "Усиление измерения",
   k: "Сторона блока телеметрии",
   sigmaNu: "Шум телеметрии",
+  telemetryPeriod: "Период телеметрии, шагов",
   resourceRadius: "Радиус подсчёта доли ресурса",
   effortThreshold: "Порог включения усилия",
   captureThreshold: "Порог захвата",
