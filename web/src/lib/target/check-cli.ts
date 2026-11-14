@@ -62,6 +62,18 @@ const labels: Record<Parameter, string> = {
   f4BatchSize: "Эпизодов в батче зонда F4",
   f4Updates: "Обновлений зонда F4",
   f4TrainFraction: "Доля обучающих эпизодов F4",
+  controllerHidden: "Узлов состояния контроллера",
+  ppoEpisodes: "Эпизодов на обновление PPO",
+  ppoEpochs: "Эпох PPO на обновление",
+  ppoMinibatch: "Эпизодов в мини-батче PPO",
+  ppoClip: "Порог отсечения PPO",
+  ppoLambda: "Параметр GAE",
+  ppoValueCoef: "Вес потерь ценности",
+  ppoEntropyCoef: "Вес энтропии",
+  ppoMaxGradNorm: "Предел нормы градиента",
+  ppoUpdates: "Обновлений PPO",
+  ppoEvalEvery: "Обновлений между проверками",
+  ppoEvalEpisodes: "Эпизодов проверки",
 };
 
 export type Options = { episodes: number; config: Config };

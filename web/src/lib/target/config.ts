@@ -51,6 +51,18 @@ export const defaults = {
   f4BatchSize: 32,
   f4Updates: 6000,
   f4TrainFraction: 0.8,
+  controllerHidden: 64,
+  ppoEpisodes: 64,
+  ppoEpochs: 4,
+  ppoMinibatch: 16,
+  ppoClip: 0.2,
+  ppoLambda: 0.95,
+  ppoValueCoef: 0.5,
+  ppoEntropyCoef: 0.01,
+  ppoMaxGradNorm: 0.5,
+  ppoUpdates: 2000,
+  ppoEvalEvery: 50,
+  ppoEvalEpisodes: 500,
 };
 
 export type Config = typeof defaults;
@@ -69,6 +81,8 @@ export const streams = {
   probe: 22,
   // Stream 23 is retired; do not reuse it.
   falseAlarm: 24,
+  controller: 25,
+  controllerAction: 26,
 };
 
 export function validateConfig(config: Config): void {
@@ -102,6 +116,13 @@ export function validateConfig(config: Config): void {
     "f4Hidden",
     "f4BatchSize",
     "f4Updates",
+    "controllerHidden",
+    "ppoEpisodes",
+    "ppoEpochs",
+    "ppoMinibatch",
+    "ppoUpdates",
+    "ppoEvalEvery",
+    "ppoEvalEpisodes",
   ] as const) {
     if (!Number.isSafeInteger(config[name])) fail(name);
   }
@@ -157,6 +178,23 @@ export function validateConfig(config: Config): void {
   }
   if (config.f4TrainFraction <= 0 || config.f4TrainFraction >= 1) fail("f4TrainFraction");
   if (config.R > config.fieldSize * config.fieldSize) fail("R");
+  for (const name of [
+    "controllerHidden",
+    "ppoEpisodes",
+    "ppoEpochs",
+    "ppoMinibatch",
+    "ppoUpdates",
+    "ppoEvalEvery",
+    "ppoEvalEpisodes",
+    "ppoMaxGradNorm",
+  ] as const) {
+    if (config[name] <= 0) fail(name);
+  }
+  if (config.ppoClip <= 0 || config.ppoClip >= 1) fail("ppoClip");
+  if (config.ppoLambda > 1) fail("ppoLambda");
+  if (config.ppoMinibatch > config.ppoEpisodes) fail("ppoMinibatch");
+  if (config.ppoUpdates * config.ppoEpisodes > 10000000) fail("ppoUpdates, ppoEpisodes");
+  if (8000000001 + config.ppoEvalEpisodes - 1 > Number.MAX_SAFE_INTEGER) fail("ppoEvalEpisodes");
 }
 
 export function configure(overrides: Partial<Config> = {}): Config {
