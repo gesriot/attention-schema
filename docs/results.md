@@ -1267,4 +1267,4 @@ The E1 column is the share of cue and direction pairs where one step of telemetr
 
 Beside it, not gating: the schema's inputs improve on the telemetry history by 0.23, 0.29 and 0.36 cells at σ_ν 0.5, 0.75 and 1, a fifth to a quarter of its error.
 
-The E1 check, its bound of 0.9 and its reading from one step were set when the check was registered for k 8, before this route. In E1 the offset is held for several steps, which a reading from one step does not use. Whether the check should change is decided separately, before any further run.
+The E1 check, its bound of 0.9 and its reading from one step were set when the check was registered for k 8, before this route. In E1 the probe comes a few steps after the cue, so more than one step of telemetry may bear on the offset, which a reading from one step does not use. Whether the check should change is decided separately, before any further run.
