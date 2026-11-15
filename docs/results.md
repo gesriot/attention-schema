@@ -1403,3 +1403,20 @@ Five settings meet every condition. A stronger command helps nothing: it cuts th
 **The order for F4**, by the registered rule. First `pMove` 0.2, the only passing setting with one parameter changed. Then `pMove` 0.35 with σ_ε 0.05, two parameters and two grid steps. Third, of the two settings at three steps, `pMove` 0.2 with σ_ε 0.05 ahead of `pMove` 0.35 with σ_ε 0.02: the rule puts a change in the target's motion before one in the mechanism's noise, and the first has more of its change in the motion. That tie-break is a reading of the rule.
 
 The E1 check does not depend on the target's motion or on σ_ε: the map at rest is the same, and with k 4 and σ_ν 0.5 it resolves every offset of 2 cells, as before.
+
+## F4 after the third tuning
+
+Run as registered, 32000 episodes, 96000 updates, k 4, σ_ν 0.5, telemetry on every step. Every probe is flat at update 96000.
+
+| Setting | Perception | Commands | Telemetry | Schema inputs | Ratio |
+| :-- | --: | --: | --: | --: | --: |
+| Present values | 2.61 | 7.71 | 1.01 | 0.782 | 0.77 |
+| `pMove` 0.2 | 2.67 | 7.71 | 1.01 | 0.779 | 0.77 |
+| `pMove` 0.35, σ_ε 0.05 | 2.61 | 7.78 | 0.98 | 0.739 | 0.75 |
+| `pMove` 0.2, σ_ε 0.05 | 2.67 | 7.78 | 0.98 | 0.739 | 0.75 |
+
+**None of the three passes:** the telemetry alone gives the position to about 1 cell, well under 1.5. The clean frames were not run.
+
+Under the neutral policy the commands are random and the target never enters the attention mechanism, so the path of attention does not depend on the target's motion. With `pMove` 0.2 the telemetry and command rows are the same as at the present values to the last digit, and only the perception changes. A quieter mechanism makes the commands more informative, and the telemetry by as much: the ratio moves from 0.77 to 0.75. The third tuning makes the task reachable for an agent that has to find the target, and leaves F4 where it was.
+
+By the registration, what follows is decided separately.
