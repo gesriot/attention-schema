@@ -1436,3 +1436,26 @@ Registered before any run in the frozen world. C6 is the controller of `target:c
 **Readiness.** C6 is ready when, at every rate, the mean over the three runs at the last checkpoint, on the 500 evaluation episodes, catches in at least 0.6 of episodes and answers correctly in at least 0.6. For reference, a fixed paddle catches about 0.19, a random answer is right in 0.25, and the hand-written policy over the same inputs gives 0.764 and 0.731.
 
 **If it fails.** What follows is decided separately. Reward for attention is not added, as the spec says.
+
+## Control C6
+
+Run as registered above, in the frozen world: three runs at each rate, 3000 updates. Last checkpoint, 500 evaluation episodes.
+
+| Rate | Caught | Correct | Focus at target | Effort | Reward |
+| --: | --: | --: | --: | --: | --: |
+| 0.0003 | 0.357 | 0.313 | 0.159 | 0.044 | −0.69 |
+| 0.001 | 0.341 | 0.262 | 0.160 | 0.282 | −0.96 |
+| 0.003 | 0.324 | 0.242 | 0.152 | 0.214 | −1.00 |
+
+The runs at one rate differ by up to 0.1 in catch. **C6 is not ready**: no rate reaches 0.6 on either measure. The controller learns to move the paddle a little, from 0.2 to about 0.35, and keeps attention on the target less often than the neutral policy does, 16% of steps against 25%. By the registration, what follows is decided separately.
+
+**A diagnostic, not a verdict: can the controller even copy the hand-written policy?** The same network, trained by cross-entropy to copy the hand-written policy over the inputs of C6 on episodes that policy drives, 64 episodes per update, rate 0.001. The copy is then run on its own, greedily, on 256 evaluation episodes.
+
+| Updates | Commands copied | Paddle moves copied | Copy caught | Copy correct |
+| --: | --: | --: | --: | --: |
+| 0 | 0.063 | 0.237 | 0.184 | 0.254 |
+| 100 | 0.603 | 0.868 | 0.355 | 0.246 |
+| 200 | 0.674 | 0.924 | 0.488 | 0.270 |
+| 300 | 0.718 | 0.953 | 0.492 | 0.309 |
+
+With the right action given on every step, the network gets 72% of commands right after 19200 episodes and is still climbing, and the answer, taken once per episode, barely moves. The hand-written command compares the position of slot 0 with the centre of a 256-cell map, and the answer reads one number through four thresholds. A single GRU layer with linear heads learns both slowly even under supervision. Under reinforcement, with one reward at the end of the episode, it has no chance within this budget. The obstacle is now the controller as much as the world.
