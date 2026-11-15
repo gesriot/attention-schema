@@ -1298,7 +1298,7 @@ Run as registered above, 32000 episodes, 96000 updates, k 4 and σ_ν 0.5. Every
 
 The row for $m$ 1 is from the one-step reading on the same corpus. **No setting passes, so this route stops here.** With $m$ 3 the schema's inputs are within 1 cell and the telemetry alone gives 1.34; with $m$ 4 the telemetry alone gives 1.45 and the schema's inputs 1.04.
 
-**Across the three routes the same ratio holds.** The schema's inputs together miss by about 0.7 to 0.77 of what the telemetry history alone misses, whether the telemetry is made coarser, noisier or rarer: 0.70 with k 4 and σ_ν 1.25, 0.68 with σ_ν 1.5, 0.72 to 0.77 here. The bounds of 1 and 1.5 cells ask for at most 0.67, at an absolute level of 1 cell. Only a telemetry with blocks of 8, too coarse for E1, gave a lower ratio. Whatever is changed in the telemetry, the commands and the perception take off about a quarter of the remaining error, not a third.
+**Across the three routes the same ratio holds.** The schema's inputs together miss by about 0.7 to 0.77 of what the telemetry history alone misses, whether the telemetry is made noisier or rarer: 0.70 with k 4 and σ_ν 1.25, 0.68 with σ_ν 1.5, 0.72 to 0.77 here. The bounds of 1 and 1.5 cells ask for at most 0.67, at an absolute level of 1 cell. Blocks of 2 gave 0.72 to 0.81. Only blocks of 8, too coarse for E1, gave a lower ratio, about 0.55. Whatever is changed in the telemetry, the commands and the perception take off about a quarter of the remaining error, not a third.
 
 ## C6: first runs
 
