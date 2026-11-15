@@ -1363,3 +1363,43 @@ The measurement noise, the perception, the flashes and the telemetry stay. The d
 **F4** is run as first registered, every source from its history, at k 4 and σ_ν 0.5 with telemetry on every step: 32000 episodes, 96000 updates, the readings and the rule for a probe that is not flat as on the larger corpus, a reading within 0.02 cells of a bound on the bound. Every source is rerun, since the world changes. The first setting that passes F4 and the E1 check, as registered, is proposed for freezing, and the owner decides. If none of the three passes, what follows is decided separately.
 
 **C6** is not part of the choice. Its readiness condition is registered after the choice and before its runs.
+
+## Third tuning, for the agent's inputs
+
+Run as registered above, 2000 episodes on the control seeds, every point of the grid. "Hand" is the hand-written policy over the inputs of C6, "focus" the share of its steps with the target within 1 cell of the centre of attention. F6 columns as in the first tuning: flashes captured, exits and the gap under the ideal policy, the target in focus under the neutral policy. The last column names the conditions that fail.
+
+| `pMove` | σ_ε | β_endo | Hand caught | Hand correct | Hand focus | F2 perc. | C0 perc. | F2 ideal | Captured | Exits | Gap | Neutral focus | Fails |
+| --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- |
+| 0.5 | 0.1 | 1 | 0.432 | 0.441 | 0.311 | 0.790 | 0.263 | 0.973 | 0.374 | 2.538 | 0.565 | 0.161 | hand catch, hand correct |
+| 0.5 | 0.1 | 1.5 | 0.418 | 0.425 | 0.309 | 0.797 | 0.263 | 0.981 | 0.131 | 2.166 | 0.457 | 0.169 | hand catch, hand correct, captured |
+| 0.5 | 0.1 | 2 | 0.386 | 0.378 | 0.252 | 0.773 | 0.263 | 0.979 | 0.096 | 2.050 | 0.440 | 0.172 | hand catch, hand correct, captured |
+| 0.5 | 0.05 | 1 | 0.492 | 0.512 | 0.360 | 0.844 | 0.263 | 0.978 | 0.373 | 2.370 | 0.525 | 0.160 | hand catch, hand correct |
+| 0.5 | 0.05 | 1.5 | 0.470 | 0.489 | 0.349 | 0.847 | 0.263 | 0.983 | 0.131 | 2.108 | 0.425 | 0.167 | hand catch, hand correct, captured |
+| 0.5 | 0.05 | 2 | 0.411 | 0.423 | 0.271 | 0.815 | 0.263 | 0.983 | 0.094 | 2.014 | 0.413 | 0.170 | hand catch, hand correct, captured |
+| 0.5 | 0.02 | 1 | 0.520 | 0.538 | 0.390 | 0.858 | 0.263 | 0.979 | 0.377 | 2.354 | 0.510 | 0.157 | hand catch, hand correct |
+| 0.5 | 0.02 | 1.5 | 0.473 | 0.488 | 0.361 | 0.851 | 0.263 | 0.983 | 0.129 | 2.134 | 0.413 | 0.166 | hand catch, hand correct, captured |
+| 0.5 | 0.02 | 2 | 0.420 | 0.414 | 0.273 | 0.824 | 0.263 | 0.981 | 0.094 | 2.084 | 0.404 | 0.169 | hand catch, hand correct, captured |
+| 0.35 | 0.1 | 1 | 0.591 | 0.572 | 0.473 | 0.817 | 0.288 | 0.977 | 0.354 | 2.138 | 0.526 | 0.199 | hand catch, hand correct |
+| 0.35 | 0.1 | 1.5 | 0.578 | 0.551 | 0.474 | 0.840 | 0.288 | 0.981 | 0.120 | 1.617 | 0.409 | 0.215 | hand catch, hand correct, captured |
+| 0.35 | 0.1 | 2 | 0.498 | 0.488 | 0.378 | 0.811 | 0.288 | 0.979 | 0.089 | 1.454 | 0.388 | 0.220 | hand catch, hand correct, captured |
+| 0.35 | 0.05 | 1 | 0.647 | 0.630 | 0.527 | 0.876 | 0.288 | 0.981 | 0.350 | 1.752 | 0.475 | 0.199 | – |
+| 0.35 | 0.05 | 1.5 | 0.612 | 0.617 | 0.515 | 0.882 | 0.288 | 0.982 | 0.114 | 1.410 | 0.369 | 0.214 | captured |
+| 0.35 | 0.05 | 2 | 0.519 | 0.508 | 0.402 | 0.836 | 0.288 | 0.981 | 0.086 | 1.362 | 0.355 | 0.218 | hand catch, hand correct, captured |
+| 0.35 | 0.02 | 1 | 0.678 | 0.672 | 0.557 | 0.892 | 0.288 | 0.981 | 0.361 | 1.653 | 0.454 | 0.196 | – |
+| 0.35 | 0.02 | 1.5 | 0.635 | 0.632 | 0.531 | 0.893 | 0.288 | 0.984 | 0.117 | 1.430 | 0.353 | 0.212 | captured |
+| 0.35 | 0.02 | 2 | 0.529 | 0.510 | 0.395 | 0.852 | 0.288 | 0.981 | 0.084 | 1.415 | 0.343 | 0.217 | hand catch, hand correct, captured |
+| 0.2 | 0.1 | 1 | 0.764 | 0.731 | 0.661 | 0.821 | 0.291 | 0.969 | 0.326 | 2.017 | 0.470 | 0.250 | – |
+| 0.2 | 0.1 | 1.5 | 0.756 | 0.724 | 0.670 | 0.829 | 0.291 | 0.972 | 0.114 | 1.407 | 0.348 | 0.280 | captured |
+| 0.2 | 0.1 | 2 | 0.658 | 0.605 | 0.540 | 0.801 | 0.291 | 0.972 | 0.079 | 1.244 | 0.325 | 0.286 | captured |
+| 0.2 | 0.05 | 1 | 0.820 | 0.808 | 0.710 | 0.863 | 0.291 | 0.971 | 0.335 | 1.409 | 0.408 | 0.251 | – |
+| 0.2 | 0.05 | 1.5 | 0.785 | 0.753 | 0.698 | 0.875 | 0.291 | 0.976 | 0.114 | 1.065 | 0.296 | 0.281 | captured, gap |
+| 0.2 | 0.05 | 2 | 0.661 | 0.639 | 0.553 | 0.843 | 0.291 | 0.970 | 0.079 | 1.042 | 0.281 | 0.287 | captured, gap |
+| 0.2 | 0.02 | 1 | 0.846 | 0.829 | 0.732 | 0.887 | 0.291 | 0.973 | 0.334 | 1.199 | 0.377 | 0.249 | – |
+| 0.2 | 0.02 | 1.5 | 0.786 | 0.773 | 0.705 | 0.893 | 0.291 | 0.974 | 0.114 | 0.959 | 0.274 | 0.278 | captured, exits, gap |
+| 0.2 | 0.02 | 2 | 0.666 | 0.643 | 0.547 | 0.842 | 0.291 | 0.968 | 0.077 | 1.012 | 0.262 | 0.286 | captured, gap |
+
+Five settings meet every condition. A stronger command helps nothing: it cuts the share of flashes that capture attention below 20% and makes the hand-written policy worse. A slower target helps most, and a quieter mechanism helps further.
+
+**The order for F4**, by the registered rule. First `pMove` 0.2, the only passing setting with one parameter changed. Then `pMove` 0.35 with σ_ε 0.05, two parameters and two grid steps. Third, of the two settings at three steps, `pMove` 0.2 with σ_ε 0.05 ahead of `pMove` 0.35 with σ_ε 0.02: the rule puts a change in the target's motion before one in the mechanism's noise, and the first has more of its change in the motion. That tie-break is a reading of the rule.
+
+The E1 check does not depend on the target's motion or on σ_ε: the map at rest is the same, and with k 4 and σ_ν 0.5 it resolves every offset of 2 cells, as before.
