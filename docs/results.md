@@ -1311,3 +1311,26 @@ Exploratory runs before any registration, not a verdict. `npm run target:c6 -- -
 | 0.001 | −1.03 | 0.222 | 0.296 | 0.106 | 0.103 |
 
 An update takes about 6 s, a run of 2000 updates three and a half hours. The controller learns to stop paying for effort and little else. A paddle that stays in place catches about 0.19 of targets, a random answer is right in 0.25 of episodes, and the hand-written policy over the same perception catches 0.807 and answers 0.791 right. After 128000 episodes the oracle controller is near the first two, not the last two.
+
+## C6: why the controller does not learn
+
+Diagnostics, not verdicts, on scratch copies of the code; none of them changes the repository.
+
+| Run | Updates | Caught | Correct | Focus at target |
+| :-- | --: | --: | --: | --: |
+| Catch reward only, rate 0.001 | 600 | 0.206 | – | 0.108 |
+| Catch reward only, rate 0.003 | 600 | 0.182 | – | 0.104 |
+| Dense reward: minus the paddle's distance to the target every step | 200 | 0.188 | – | 0.118 |
+| The same without the gradient norm limit | 200 | 0.188 | – | 0.088 |
+| The same with the value weight 0.01 | 200 | 0.234 | – | 0.099 |
+
+Even a reward on every step for being near the target does not teach the paddle. Imitation tells why. Trained by cross-entropy to copy the move toward the true target column, on episodes where the commands are those of the neutral policy, the controller reaches 0.62 of moves right and stops there. A fixed rule that moves toward the column of perception slot 0 gets 0.36. When the commands do not keep attention on the target, the perception loses it: with the threshold of 10 nothing is detected outside the focus. So the column the controller sees is not the target's, and nothing about the paddle can be learned until the commands keep attention on the target. That in turn is rewarded only through the paddle and the answer.
+
+**A hand-written policy over the inputs of C6 alone**, on the 500 evaluation episodes: commands toward the predicted position of slot 0 from the centre of $a_t$, the paddle toward the column of slot 0, the answer from its hue.
+
+| Effort | Caught | Correct | Focus at target | Reward |
+| :-- | --: | --: | --: | --: |
+| Never | 0.432 | 0.476 | 0.316 | −0.18 |
+| Always | 0.350 | 0.356 | 0.227 | −1.19 |
+
+The hand-written policy with the true target position catches 0.807 and answers 0.791 right. With what the agent can see, a reasonable policy keeps attention on the target a third of the time and does a little better than half of that. The learned controller does not reach even this. The task as tuned may be within reach of a policy that knows where the target is and well beyond one that has to find it through its own attention.
