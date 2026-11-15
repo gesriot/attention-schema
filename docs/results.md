@@ -1284,3 +1284,30 @@ Registered by the owner's decision after the one-step reading and before any run
 **What counts.** A setting passes when the schema's inputs give at most 1 cell and the telemetry at least 1.5. Among passing settings that are not on the bound, the smallest $m$ is proposed for freezing, and the owner decides. If none passes, this route stops there, and k and σ_ν are not varied with $m$ without a separate decision.
 
 **Outside F4.** With $m$ above 1 the probe stimulus of E1 can fall on a step without telemetry. Whether E1 times its probe to telemetry steps is decided when E1 is built. In E2B the telemetry is now blocked on the next step on which it would arrive.
+
+## F4 with telemetry every m-th step
+
+Run as registered above, 32000 episodes, 96000 updates, k 4 and σ_ν 0.5. Every probe is flat at update 96000.
+
+| m | Telemetry, lowest | Schema inputs at 96000 | Ratio |
+| --: | --: | --: | --: |
+| 1 | 1.01 | 0.782 | 0.77 |
+| 2 | 1.20 | 0.885 | 0.74 |
+| 3 | 1.34 | 0.991 | 0.74 |
+| 4 | 1.45 | 1.042 | 0.72 |
+
+The row for $m$ 1 is from the one-step reading on the same corpus. **No setting passes, so this route stops here.** With $m$ 3 the schema's inputs are within 1 cell and the telemetry alone gives 1.34; with $m$ 4 the telemetry alone gives 1.45 and the schema's inputs 1.04.
+
+**Across the three routes the same ratio holds.** The schema's inputs together miss by about 0.7 to 0.77 of what the telemetry history alone misses, whether the telemetry is made coarser, noisier or rarer: 0.70 with k 4 and σ_ν 1.25, 0.68 with σ_ν 1.5, 0.72 to 0.77 here. The bounds of 1 and 1.5 cells ask for at most 0.67, at an absolute level of 1 cell. Only a telemetry with blocks of 8, too coarse for E1, gave a lower ratio. Whatever is changed in the telemetry, the commands and the perception take off about a quarter of the remaining error, not a third.
+
+## C6: first runs
+
+Exploratory runs before any registration, not a verdict. `npm run target:c6 -- --runs 1 --rates 0.0003,0.001`, the defaults of the controller and PPO, 2000 updates of 64 episodes.
+
+| Rate | Reward | Caught | Correct | Effort | Focus at target |
+| --: | --: | --: | --: | --: | --: |
+| Before training | −1.64 | 0.170 | 0.234 | 0.750 | 0.098 |
+| 0.0003 | −0.90 | 0.234 | 0.318 | 0.000 | 0.105 |
+| 0.001 | −1.03 | 0.222 | 0.296 | 0.106 | 0.103 |
+
+An update takes about 6 s, a run of 2000 updates three and a half hours. The controller learns to stop paying for effort and little else. A paddle that stays in place catches about 0.19 of targets, a random answer is right in 0.25 of episodes, and the hand-written policy over the same perception catches 0.807 and answers 0.791 right. After 128000 episodes the oracle controller is near the first two, not the last two.
