@@ -501,6 +501,8 @@ Version A must not be presented as a test of emergence. Self-organization does n
 
 Control F4 is cheap: it is trained with supervision on a random policy and runs before any reinforcement learning. If it fails, nothing else makes sense.
 
+**F4 in the target world as built.** F4 passes only in part. The schema's inputs together give the position to about 0.78 cells and the history of the telemetry alone to about 1.0. No telemetry fine enough to resolve the probe offset of E1 meets the registered bounds of 1 and 1.5 cells; the routes tried are in the results. The setup is frozen with this partial separation instead of bounds moved after the data. Every comparison is read with it: the schema's inputs gain over the telemetry alone by about a quarter, and a null result here says less than it would in a world where no single source gave the position.
+
 ### Compared conditions
 
 | Condition | Design | What it rules out |
@@ -771,7 +773,7 @@ Steps 1 to 3 anchor the bench to the literature. Steps 4 to 8 test hypotheses 1 
 **Acceptance of the bench does not depend on whether the hypotheses are confirmed.** The bench is accepted if:
 
 - Attention really changes processing, as shown by C0.
-- The command and the actual focus diverge, and control F4 is passed.
+- The command and the actual focus diverge, and control F4 is passed, or its partial result is stated with every comparison.
 - Feasibility controls are passed before comparison, and all setups are frozen.
 - Level 0 qualitatively reproduces the published results, or the discrepancy is explained.
 - Each intervention changes exactly the stated state and no other. This is checked by tests.

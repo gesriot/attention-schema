@@ -1420,3 +1420,19 @@ Run as registered, 32000 episodes, 96000 updates, k 4, σ_ν 0.5, telemetry on e
 Under the neutral policy the commands are random and the target never enters the attention mechanism, so the path of attention does not depend on the target's motion. With `pMove` 0.2 the telemetry and command rows are the same as at the present values to the last digit, and only the perception changes. A quieter mechanism makes the commands more informative, and the telemetry by as much: the ratio moves from 0.77 to 0.75. The third tuning makes the task reachable for an agent that has to find the target, and leaves F4 where it was.
 
 By the registration, what follows is decided separately.
+
+## Decision: freeze with the partial separation of F4
+
+The owner's decision, after F4 failed on every route compatible with E1. F4 is recorded as not passed under its registered bounds. The bounds are not moved and no relative criterion is chosen after the data. The setup is frozen with the separation F4 measured, and the spec says so beside F4 and in the acceptance criteria: the schema's inputs give the position to 0.78 cells, the telemetry history alone to 1.01, the perception summary to 2.67, the commands to 7.71. Every comparison is read with it.
+
+**The frozen target world** is the present one with `pMove` 0.2, the first setting of the third tuning: telemetry with k 4 and σ_ν 0.5 on every step, the second perception, σ_η 0.25, the mechanism's constants unchanged. On the control seeds: F2 with the ideal observer 0.969, F2 with perception 0.821 correct and 0.923 caught, C0 with perception 0.292, the hand-written policy over the inputs of C6 0.764 caught and 0.731 correct. F6: under the ideal policy 33% of flashes captured, 2.0 exits per episode and a gap of 0.47; under the neutral policy the target in focus on 25% of steps. The clean frames were not probed in this world; under the neutral policy they do not depend on the target's speed beyond its path, and they missed by 5.8 cells or more in every run so far.
+
+## Planned: control C6
+
+Registered before any run in the frozen world. C6 is the controller of `target:c6`, with the true $a_t$ as input, trained by PPO with the defaults now in the code.
+
+**The runs.** Rates 0.0003, 0.001 and 0.003, the grid from which the rates of the compared conditions are later tuned on C2. Three runs at each rate, seeds 1 to 3, 3000 updates of 64 episodes, the frozen world.
+
+**Readiness.** C6 is ready when, at every rate, the mean over the three runs at the last checkpoint, on the 500 evaluation episodes, catches in at least 0.6 of episodes and answers correctly in at least 0.6. For reference, a fixed paddle catches about 0.19, a random answer is right in 0.25, and the hand-written policy over the same inputs gives 0.764 and 0.731.
+
+**If it fails.** What follows is decided separately. Reward for attention is not added, as the spec says.
