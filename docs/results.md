@@ -1334,3 +1334,32 @@ Even a reward on every step for being near the target does not teach the paddle.
 | Always | 0.350 | 0.356 | 0.227 | −1.19 |
 
 The hand-written policy with the true target position catches 0.807 and answers 0.791 right. With what the agent can see, a reasonable policy keeps attention on the target a third of the time and does a little better than half of that. The learned controller does not reach even this. The task as tuned may be within reach of a policy that knows where the target is and well beyond one that has to find it through its own attention.
+
+## Planned: third tuning, for the agent's inputs
+
+Registered by the owner's decision before any run of the sweep. F4 failed on every route tried, and C6 does not learn. Both point to the same cause: the commands hold attention poorly, and the perception is blind outside the focus, so an agent that has to find the target through its own attention keeps it a third of the time.
+
+**A new reference: the hand-written policy over the inputs of C6.** It sees only what C6 sees. Its commands move the centre of $a_t$ toward the predicted position of slot 0, its position plus its velocity, rounded and limited to one cell per axis; it never uses effort; the paddle moves toward the column of slot 0; the answer is the hue category of slot 0 on the last step. It runs on the control seeds, 2000 episodes. It is a scratch tool for this sweep, recorded here, and enters the repository with the chosen setting.
+
+**The readiness conditions**, on the control seeds with 2000 episodes:
+
+- The hand-written policy over the inputs of C6 catches in at least 0.6 of episodes and answers correctly in at least 0.6. At the present values it gives 0.43 and 0.48 on the evaluation seeds of C6.
+- F2 with perception answers correctly in at least 0.75 of episodes, and C0 with perception in at most 0.35.
+- F2 with the ideal observer answers correctly in at least 0.85 of episodes.
+- The F6 conditions of the first tuning: under the ideal policy 20% to 80% of flashes captured, at least 1 exit of the target from the focus per episode and a mean gap of at least 0.3 between the commanded and the actual centre; under the neutral policy the target in focus on at most 30% of steps.
+
+**What varies.** The full grid, every point run and recorded:
+
+| Parameter | Values | Present |
+| :-- | :-- | --: |
+| Probability that the target moves, `pMove` | 0.5, 0.35, 0.2 | 0.5 |
+| Noise of the mechanism, `sigmaEpsilon` | 0.1, 0.05, 0.02 | 0.1 |
+| Strength of the command, `betaEndo` | 1, 1.5, 2 | 1 |
+
+The measurement noise, the perception, the flashes and the telemetry stay. The detection threshold stays tied to the false-alarm rule.
+
+**Choice.** Among the settings that meet every condition, the one with the fewest parameters changed; then the smallest number of grid steps from the present values; then a change in the target's motion before one in the mechanism's noise, and that before one in the command's strength. Up to three settings, in that order, go on to F4.
+
+**F4** is run as first registered, every source from its history, at k 4 and σ_ν 0.5 with telemetry on every step: 32000 episodes, 96000 updates, the readings and the rule for a probe that is not flat as on the larger corpus, a reading within 0.02 cells of a bound on the bound. Every source is rerun, since the world changes. The first setting that passes F4 and the E1 check, as registered, is proposed for freezing, and the owner decides. If none of the three passes, what follows is decided separately.
+
+**C6** is not part of the choice. Its readiness condition is registered after the choice and before its runs.
