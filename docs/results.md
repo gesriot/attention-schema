@@ -1479,3 +1479,19 @@ Registered by the owner's decision before any run of a new controller. The contr
 A is the present controller. New layers start like the probe's readout: weights uniform on $(-1/\sqrt{\text{fan-in}}, 1/\sqrt{\text{fan-in}})$, biases zero.
 
 **Choice.** The candidate whose copy has the highest mean of caught and correct. Within 0.03 of the best, the one with the fewest parameters. The chosen design goes into the repository, and C6 is run again under a readiness condition registered before its runs. If no copy catches and answers in at least 0.6 of episodes, that is reported with the choice.
+
+## Choosing the controller by copying
+
+Run as registered above, on a scratch copy of the controller; the gradients of all five candidates were checked against central differences. After 300 updates:
+
+| | Parameters | ms per update | Commands copied | Paddle copied | Answer copied | Copy caught | Copy correct | Mean |
+| :-- | --: | --: | --: | --: | --: | --: | --: | --: |
+| A | 68946 | 697 | 0.735 | 0.969 | 0.672 | 0.563 | 0.375 | 0.469 |
+| B | 75218 | 583 | 0.761 | 0.981 | 0.391 | 0.621 | 0.289 | 0.455 |
+| C | 162450 | 1377 | 0.753 | 0.971 | 0.734 | 0.551 | 0.500 | 0.526 |
+| D | 73106 | 726 | 0.762 | 0.974 | 0.313 | 0.586 | 0.328 | 0.457 |
+| E | 154514 | 1112 | 0.770 | 0.986 | 0.234 | 0.660 | 0.281 | 0.471 |
+
+The answer is copied on 64 held-out episodes and the copy runs on 256, so a difference of a few hundredths is within the noise of either.
+
+**Chosen: C**, a GRU of 128 with linear heads, the highest mean and no other candidate within 0.03. It needs no new code: it is `controllerHidden` 128. **No copy catches and answers in at least 0.6 of episodes.** Every candidate copies about three quarters of the commands and nearly every paddle move. What separates them is the answer, which is taught once per episode, and the extra layers do not help it: B, D and E answer near chance. The obstacle is less the shape of the network than how few examples of the answer an episode gives.
