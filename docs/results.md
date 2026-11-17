@@ -1495,3 +1495,7 @@ Run as registered above, on a scratch copy of the controller; the gradients of a
 The answer is copied on 64 held-out episodes and the copy runs on 256, so a difference of a few hundredths is within the noise of either.
 
 **Chosen: C**, a GRU of 128 with linear heads, the highest mean and no other candidate within 0.03. It needs no new code: it is `controllerHidden` 128. **No copy catches and answers in at least 0.6 of episodes.** Every candidate copies about three quarters of the commands and nearly every paddle move. What separates them is the answer, which is taught once per episode, and the extra layers do not help it: B, D and E answer near chance. The obstacle is less the shape of the network than how few examples of the answer an episode gives.
+
+## Planned: C6 with the chosen controller
+
+Registered before the runs. As in the first registration of C6, with `controllerHidden` 128: rates 0.0003, 0.001 and 0.003, three runs at each, 3000 updates, the frozen world. C6 is ready when, at every rate, the mean over the three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6. If it fails, what follows is decided separately.
