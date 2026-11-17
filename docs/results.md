@@ -1459,3 +1459,23 @@ The runs at one rate differ by up to 0.1 in catch. **C6 is not ready**: no rate 
 | 300 | 0.718 | 0.953 | 0.492 | 0.309 |
 
 With the right action given on every step, the network gets 72% of commands right after 19200 episodes and is still climbing, and the answer, taken once per episode, barely moves. The hand-written command compares the position of slot 0 with the centre of a 256-cell map, and the answer reads one number through four thresholds. A single GRU layer with linear heads learns both slowly even under supervision. Under reinforcement, with one reward at the end of the episode, it has no chance within this budget. The obstacle is now the controller as much as the world.
+
+## Planned: choosing the controller by copying
+
+Registered by the owner's decision before any run of a new controller. The controller is shared by every condition, so its design is settled on controls before the comparisons. It is chosen by a test of what it can learn, not by C6.
+
+**The test.** The cloning diagnostic above: the network is trained by cross-entropy to copy the hand-written policy over the inputs of C6, on episodes that policy drives in the frozen world, 64 episodes per update, Adam at 0.001, 300 updates, the same episodes for every candidate. Every step teaches the command, the effort (always none) and the paddle move, the last step also the answer. Measured after 300 updates: the share of commands and of paddle moves copied on 64 held-out episodes, and the copy run on its own, greedily, on 256 evaluation episodes, caught and correct. The time per update is reported.
+
+**The candidates**, the inputs of C6 unchanged:
+
+| | Before the GRU | GRU | Between the GRU and the heads |
+| :-- | :-- | --: | :-- |
+| A | – | 64 | – |
+| B | a layer of 128 with ReLU | 64 | – |
+| C | – | 128 | – |
+| D | – | 64 | a layer of 64 with ReLU |
+| E | a layer of 128 with ReLU | 128 | a layer of 128 with ReLU |
+
+A is the present controller. New layers start like the probe's readout: weights uniform on $(-1/\sqrt{\text{fan-in}}, 1/\sqrt{\text{fan-in}})$, biases zero.
+
+**Choice.** The candidate whose copy has the highest mean of caught and correct. Within 0.03 of the best, the one with the fewest parameters. The chosen design goes into the repository, and C6 is run again under a readiness condition registered before its runs. If no copy catches and answers in at least 0.6 of episodes, that is reported with the choice.
