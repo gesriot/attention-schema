@@ -1499,3 +1499,15 @@ The answer is copied on 64 held-out episodes and the copy runs on 256, so a diff
 ## Planned: C6 with the chosen controller
 
 Registered before the runs. As in the first registration of C6, with `controllerHidden` 128: rates 0.0003, 0.001 and 0.003, three runs at each, 3000 updates, the frozen world. C6 is ready when, at every rate, the mean over the three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6. If it fails, what follows is decided separately.
+
+## C6 with the chosen controller
+
+Run as registered above: three runs at each rate, 3000 updates, about 9 s per update. Last checkpoint, 500 evaluation episodes.
+
+| Rate | Caught | Correct | Focus at target | Effort | Reward |
+| --: | --: | --: | --: | --: | --: |
+| 0.0003 | 0.392 | 0.331 | 0.176 | 0.027 | −0.57 |
+| 0.001 | 0.347 | 0.291 | 0.147 | 0.279 | −0.89 |
+| 0.003 | 0.303 | 0.259 | 0.152 | 0.414 | −1.12 |
+
+**C6 is not ready**: no rate reaches 0.6 on either measure. The wider controller gains about 0.03 in catch and 0.02 to 0.03 in answers over the GRU of 64, within the spread between runs. At the lowest rate the means stop rising after about 1500 updates: catch 0.40, 0.39, 0.39 at 1500, 2000 and 3000. At the higher rates the controller keeps paying for effort it gains nothing from. A larger network alone does not make the task learnable by this PPO within this budget. By the registration, what follows is decided separately.
