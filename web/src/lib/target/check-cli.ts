@@ -151,6 +151,13 @@ export function formatResults(options: Options, result: CheckResult): string {
   }
   lines.push(
     "",
+    "Ручная политика на входах C6",
+    "Доля верных ответов | Доля ловли | Доля шагов с вниманием не дальше 1 клетки от цели",
+    `${result.handC6.correctRate.toFixed(6)} | ${result.handC6.catchRate.toFixed(6)} | ` +
+      result.handC6.focusRate.toFixed(6),
+  );
+  lines.push(
+    "",
     `Ложные тревоги · чистый единичный шум · кадров ${result.falseAlarms.frames.toFixed(0)}`,
     "Доля кадров с максимумом SNR не ниже порога | 95-й перцентиль максимума SNR",
     `${result.falseAlarms.rate.toFixed(6)} | ${result.falseAlarms.percentile95.toFixed(6)}`,

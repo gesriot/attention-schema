@@ -3,7 +3,7 @@ export const defaults = {
   fieldSize: 16,
   episodeSteps: 30,
   objectBrightness: 1,
-  pMove: 0.5,
+  pMove: 0.2,
   pTurn: 0.2,
   minGap: 4,
   hueCategories: 4,

@@ -17,6 +17,7 @@ function assertBits(actual: Float64Array, expected: Float64Array): void {
 
 test("period one preserves complete observation traces recorded before periodic telemetry", () => {
   // Pre-change fixtures: all observation fields at all steps, encoded as little-endian binary64.
+  const config = configure({ pMove: 0.5 });
   const references = [
     [61, "0e8c7398dddbe2480942fd3b4541cae2387cccda7f44287f47372df566c8f30f"],
     [5000000001, "2d2f27500f52be990cc817d4918e3a175a151ea98144bbc60d83ce4881baffbf"],
@@ -24,10 +25,10 @@ test("period one preserves complete observation traces recorded before periodic 
     [6000000007, "e39bc164963710634641de090bb604a8a715013301d15b2356eaa9ff83494fef"],
   ] as const;
   for (const [seed, expected] of references) {
-    const episode = createEpisode(defaults, seed);
-    const policy = createNeutralPolicy(defaults, seed);
+    const episode = createEpisode(config, seed);
+    const policy = createNeutralPolicy(config, seed);
     const hash = createHash("sha256");
-    for (let t = 1; t <= defaults.episodeSteps; t++) {
+    for (let t = 1; t <= config.episodeSteps; t++) {
       const o = episode.observation;
       const values = [
         ...o.measurement,

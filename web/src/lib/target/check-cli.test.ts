@@ -7,6 +7,7 @@ import { checkTarget } from "./evaluate.ts";
 
 test("all parameters can be overridden and invalid or unknown settings are rejected", () => {
   assert.deepEqual(parseOptions([]), { episodes: 2000, config: defaults });
+  assert.equal(defaults.pMove, 0.2);
   const all = parameters.map((name) => `${name}=${defaults[name]}`).join(",");
   assert.deepEqual(parseOptions(["--set", all]).config, defaults);
   const options = parseOptions(["--episodes", "3", "--set", "sigmaEta=0,pFlash=0.2,k=8"]);
@@ -63,6 +64,17 @@ test("small checks are repeatable and undefined event fractions print explicitly
   assert.doesNotMatch(output, /NaN|Infinity|Время/);
   const controlLines = output.split("\n").filter((line) => /^(F2|C0) \|/.test(line));
   assert.equal(controlLines.length, 2);
+  assert.match(output, /pMove \| Вероятность движения \| 0\.200000/);
+  const handTable = [
+    "Ручная политика на входах C6",
+    "Доля верных ответов | Доля ловли | Доля шагов с вниманием не дальше 1 клетки от цели",
+    [first.handC6.correctRate, first.handC6.catchRate, first.handC6.focusRate]
+      .map((value) => value.toFixed(6))
+      .join(" | "),
+  ].join("\n");
+  assert.ok(output.includes(handTable));
+  assert.ok(output.indexOf("C0 с восприятием |") < output.indexOf(handTable));
+  assert.ok(output.indexOf(handTable) < output.indexOf("Ложные тревоги ·"));
   assert.throws(() => checkTarget(defaults, 0));
 });
 

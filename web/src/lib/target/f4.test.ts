@@ -311,7 +311,8 @@ test("new settings validate and attention event summaries retain their exact val
   ]) {
     assert.throws(() => parseOptions(["--set", entry]));
   }
-  const { neutral, ideal } = checkTarget(defaults, 3);
+  // This event fixture was recorded before the target-motion setting was frozen.
+  const { neutral, ideal } = checkTarget(configure({ pMove: 0.5 }), 3);
   // Attention events are independent of the measurement noise and perception.
   const result = { neutral, ideal };
   assert.deepEqual(result, {

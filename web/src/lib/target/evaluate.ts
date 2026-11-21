@@ -3,7 +3,12 @@ import { commandedCenter, distance, resourceShare } from "./attention.ts";
 import { applyAction, createEpisode, type Action, type Score, type Truth } from "./episode.ts";
 import { createIdealPolicy, createNeutralPolicy } from "./policies.ts";
 import { isOccluded, type Position } from "./world.ts";
-import { checkPerception, type PerceptionControls } from "./perception-controls.ts";
+import {
+  checkHandC6,
+  checkPerception,
+  type HandC6Control,
+  type PerceptionControls,
+} from "./perception-controls.ts";
 import { checkFalseAlarms, type FalseAlarms } from "./false-alarms.ts";
 
 export type EventCounts = {
@@ -133,6 +138,7 @@ export type CheckResult = {
   neutral: EventSummary;
   ideal: EventSummary;
   perception: PerceptionControls;
+  handC6: HandC6Control;
   falseAlarms: FalseAlarms;
 };
 
@@ -195,6 +201,7 @@ export function checkTarget(config: Config, episodes: number): CheckResult {
     neutral: summarizeEvents(neutralCounts),
     ideal: summarizeEvents(idealCounts),
     perception: checkPerception(config, episodes),
+    handC6: checkHandC6(config, episodes),
     falseAlarms: checkFalseAlarms(config),
   };
 }
