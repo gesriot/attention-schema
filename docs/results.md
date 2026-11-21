@@ -1522,3 +1522,20 @@ Registered before the runs. A diagnostic, not a verdict: C6 stays not ready. The
 The hand-written heads add nothing to the log-probability, the entropy or the gradient. Everything else is as in C6, in the frozen world: rate 0.0003, best in both C6 grids; three runs per mode; 2000 updates, since both grids stopped rising by about 1500; the same seeds and evaluation. The hand-written policy as a whole catches in 0.764 of episodes, answers correctly in 0.731 and keeps attention at the target on 0.661 of steps.
 
 A mode closes its half when the mean over its three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6, the bar of C6. If only hand attention closes, the break is in learning to steer attention. If only hand downstream closes, it is in learning the paddle and the answer. If both close, each half is learnable alone and the break is in learning them together. If neither closes, both halves block.
+
+## Where the C6 chain breaks
+
+Run as registered above: three runs per mode, 2000 updates, about 7.7 s per update. Last checkpoint, 500 evaluation episodes; in brackets, the three runs.
+
+| Mode | Caught | Correct | Focus at target | Effort |
+| :-- | --: | --: | --: | --: |
+| Hand attention | 0.459 (0.494, 0.338, 0.544) | 0.642 (0.628, 0.618, 0.680) | 0.654 | 0 |
+| Hand downstream | 0.564 (0.502, 0.592, 0.598) | 0.439 (0.398, 0.446, 0.474) | 0.268 | 0.166 |
+| Hand-written policy, same evaluation | 0.772 | 0.730 | 0.654 | 0 |
+
+**Neither mode closes its half**, so by the registration both halves block. They do not block equally.
+
+- **Steering attention barely moves.** With the paddle and the answer given, PPO raises attention at the target from 0.12 of steps to 0.27, against 0.25 for the neutral policy and 0.65 for the hand-written commands. Catch and answers rise only as far as better attention makes them rise.
+- **The downstream half half-learns.** With attention given, the answer reaches 0.64, near the hand-written 0.73. The paddle does not hold: catch climbs to about 0.53 by update 1000, then wanders, and one run falls from 0.57 to 0.34. The paddle needs only the column of slot 0 at the last step, yet it is rewarded once, at the end, for 30 moves.
+
+With one reward at the end of a 30-step episode, PPO here learns what the answer needs and little of what the paddle needs, and almost nothing of steering attention, whose effect on the reward passes through perception and then through the paddle and the answer. What follows is decided separately.
