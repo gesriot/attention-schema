@@ -1539,3 +1539,14 @@ Run as registered above: three runs per mode, 2000 updates, about 7.7 s per upda
 - **The downstream half half-learns.** With attention given, the answer reaches 0.64, near the hand-written 0.73. The paddle does not hold: catch climbs to about 0.53 by update 1000, then wanders, and one run falls from 0.57 to 0.34. The paddle needs only the column of slot 0 at the last step, yet it is rewarded once, at the end, for 30 moves.
 
 With one reward at the end of a 30-step episode, PPO here learns what the answer needs and little of what the paddle needs, and almost nothing of steering attention, whose effect on the reward passes through perception and then through the paddle and the answer. What follows is decided separately.
+
+## Planned: PPO settings for C6
+
+Registered before the runs. The diagnostic above found that the controller barely learns to steer attention, whose effect reaches the one reward at the end of the episode through 30 steps. Two settings of the learning act directly on this, and the world, the task and the reward stay as frozen.
+
+- **GAE parameter λ = 1** instead of 0.95. With 0.95 the advantage of the first step keeps about a quarter of the final reward's direct contribution, 0.95^29 ≈ 0.23; with 1 it keeps all of it, at the price of more variance.
+- **256 episodes per update** instead of 64, to reduce that variance. Minibatch, epochs and clipping stay as they are, so the number of gradient steps per episode is unchanged.
+
+Cells: λ 1 with 64 episodes, 3000 updates; λ 0.95 with 256 episodes, 750 updates; λ 1 with 256 episodes, 750 updates. Every cell sees 192000 training episodes, as in the C6 grids. Checkpoints every 50 updates at 64 episodes and every 25 at 256. Controller of 128 units, rate 0.0003, best in both C6 grids, three runs per cell, the frozen world. The reference cell, λ 0.95 with 64 episodes, is the run already made at this rate in "C6 with the chosen controller": catch 0.392, correct 0.331.
+
+A cell passes when the mean over its three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6. If one or more pass, the one with the higher mean of the two is chosen, and C6 is run again with it at all three rates as first registered. If none passes, what follows is decided separately; the next candidate is a curriculum on episode length.
