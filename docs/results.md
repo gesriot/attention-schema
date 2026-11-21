@@ -1511,3 +1511,14 @@ Run as registered above: three runs at each rate, 3000 updates, about 9 s per up
 | 0.003 | 0.303 | 0.259 | 0.152 | 0.414 | −1.12 |
 
 **C6 is not ready**: no rate reaches 0.6 on either measure. The wider controller gains about 0.03 in catch and 0.02 to 0.03 in answers over the GRU of 64, within the spread between runs. At the lowest rate the means stop rising after about 1500 updates: catch 0.40, 0.39, 0.39 at 1500, 2000 and 3000. At the higher rates the controller keeps paying for effort it gains nothing from. A larger network alone does not make the task learnable by this PPO within this budget. By the registration, what follows is decided separately.
+
+## Planned: where the C6 chain breaks
+
+Registered before the runs. A diagnostic, not a verdict: C6 stays not ready. The controller of C6, with `controllerHidden` 128, is trained by the same PPO, but half of every action comes from the hand-written policy over the inputs of C6, the one used for the third tuning.
+
+- **Hand attention.** Commands and effort come from the hand-written policy; PPO learns the paddle and the answer.
+- **Hand downstream.** The paddle and the answer come from the hand-written policy; PPO learns commands and effort.
+
+The hand-written heads add nothing to the log-probability, the entropy or the gradient. Everything else is as in C6, in the frozen world: rate 0.0003, best in both C6 grids; three runs per mode; 2000 updates, since both grids stopped rising by about 1500; the same seeds and evaluation. The hand-written policy as a whole catches in 0.764 of episodes, answers correctly in 0.731 and keeps attention at the target on 0.661 of steps.
+
+A mode closes its half when the mean over its three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6, the bar of C6. If only hand attention closes, the break is in learning to steer attention. If only hand downstream closes, it is in learning the paddle and the answer. If both close, each half is learnable alone and the break is in learning them together. If neither closes, both halves block.
