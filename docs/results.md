@@ -1550,3 +1550,16 @@ Registered before the runs. The diagnostic above found that the controller barel
 Cells: λ 1 with 64 episodes, 3000 updates; λ 0.95 with 256 episodes, 750 updates; λ 1 with 256 episodes, 750 updates. Every cell sees 192000 training episodes, as in the C6 grids. Checkpoints every 50 updates at 64 episodes and every 25 at 256. Controller of 128 units, rate 0.0003, best in both C6 grids, three runs per cell, the frozen world. The reference cell, λ 0.95 with 64 episodes, is the run already made at this rate in "C6 with the chosen controller": catch 0.392, correct 0.331.
 
 A cell passes when the mean over its three runs at the last checkpoint catches in at least 0.6 of episodes and answers correctly in at least 0.6. If one or more pass, the one with the higher mean of the two is chosen, and C6 is run again with it at all three rates as first registered. If none passes, what follows is decided separately; the next candidate is a curriculum on episode length.
+
+## PPO settings for C6
+
+Run as registered above, about 11 hours. Last checkpoint, 500 evaluation episodes; in brackets, catch and correct answers of the three runs.
+
+| λ | Episodes per update | Caught | Correct | Focus at target | Runs |
+| --: | --: | --: | --: | --: | :-- |
+| 0.95 | 64 (reference) | 0.392 | 0.331 | 0.176 | – |
+| 1 | 64 | 0.349 | 0.325 | 0.142 | 0.360/0.322, 0.344/0.304, 0.342/0.350 |
+| 0.95 | 256 | 0.325 | 0.331 | 0.142 | 0.368/0.348, 0.204/0.332, 0.404/0.314 |
+| 1 | 256 | 0.376 | 0.297 | 0.166 | 0.390/0.292, 0.380/0.306, 0.358/0.292 |
+
+**No cell passes.** All three stay within about 0.05 of the reference and below it in catch; attention at the target stays below the 0.25 of the neutral policy in every cell. Neither the reach of the final reward to early steps nor the variance of its estimate is what holds the controller back. By the registration, what follows is decided separately.
