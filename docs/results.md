@@ -1573,3 +1573,20 @@ Registered before the runs. A diagnostic for a curriculum on episode length: if 
 References at 10 steps, control seeds, 2000 episodes: the hand-written policy over the inputs of C6 catches in 0.897 of episodes, answers correctly in 0.658 and keeps the centre of attention within one cell of the target on 0.770 of steps; C0 with perception catches in 0.388 and answers correctly in 0.244; the neutral policy keeps attention at the target on 0.402 of steps.
 
 Short episodes help if C6 at 10 steps, mean of three runs at the last checkpoint, closes at least half the gap from C0 with perception to the hand-written policy in both catch and correct answers, that is catch ≥ 0.643 and correct ≥ 0.451, and if the hand-downstream mode closes at least half the gap from the neutral policy to the hand-written one in attention at the target, ≥ 0.586. At 30 steps the same fractions are 0.10 and 0.09 for C6 and 0.19 for attention. If both hold, a curriculum is registered next; if not, it is dropped and what follows is decided separately.
+
+## C6 on short episodes
+
+Run as registered above, about 2 hours. Last checkpoint, 500 evaluation episodes; in brackets, the three runs.
+
+| Mode | Caught | Correct | Attention at target |
+| :-- | --: | --: | --: |
+| C6 | 0.371 (0.244, 0.648, 0.222) | 0.295 (0.280, 0.306, 0.300) | 0.315 |
+| Hand downstream | 0.845 (0.834, 0.842, 0.858) | 0.483 (0.472, 0.514, 0.462) | 0.549 (0.532, 0.577, 0.537) |
+| Bar | 0.643 | 0.451 | 0.586 |
+
+**Neither condition holds**, so by the registration the curriculum is dropped.
+
+- **C6 learns the paddle and then loses it.** Mean catch reaches 0.61 by update 500; two runs climb to about 0.70 and fall back to 0.24 and 0.22 by the end. Answers stay near 0.30, close to chance. Attention at the target stays below the neutral 0.402.
+- **Steering learns better when the chain is short, but not enough.** With the paddle and the answer given, PPO closes 0.40 of the gap from the neutral policy to the hand-written one, against 0.19 at 30 steps, and is still slowly rising. Catch is 0.845, near the hand-written 0.897.
+
+Shortening the episode makes steering easier to learn, but C6 does not even hold what it learns at 10 steps: the paddle, learned early, collapses while the controller learns the other heads. What follows is decided separately.
