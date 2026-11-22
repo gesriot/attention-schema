@@ -1599,3 +1599,21 @@ Registered before the runs. A diagnostic, not a verdict. In two of the three C6 
 - **A lower rate.** C6 at 10 steps with rate 0.0001, otherwise as before, three runs.
 
 The reading is descriptive. A technical cause is named if the fall coincides, in every run that falls, with one of: a head losing its entropy, a jump in KL or in clipping, the gradient into the recurrent state being taken over by one head, or a jump in the value error. The lower rate removes the fall if no run ends more than 0.1 below its own best catch. What follows is decided separately: a fix inside the specification, a new setup of the world, or stating that the target mode is not feasible within this budget.
+
+## Why C6 loses the paddle
+
+Run as registered above, about 2.7 hours. The instrumented replay reproduces the first three runs exactly, checkpoint for checkpoint.
+
+**The falls coincide with jumps in the size of the policy step.** In every fall the approximate KL divergence between the old and the new policy and the share of clipped samples rise together, while the gradient norm before clipping grows; means over 100 updates:
+
+| Run | Fall of catch | KL | Clipped | Gradient norm |
+| --: | :-- | :-- | :-- | :-- |
+| 1 | 0.70 → 0.45, updates 800–900 | 0.0065 → 0.0128 | 0.059 → 0.082 | 1.17 → 1.37 |
+| 2 | 0.71 → 0.52, updates 1100–1300 | 0.0068 → 0.0117 | 0.069 → 0.084 | 1.22 → 1.40 |
+| 3 | 0.70 → 0.40, updates 1400–1600 | 0.0074 → 0.0150 | 0.070 → 0.090 | 1.24 → 1.54 |
+
+The other candidates do not hold in every fall. No head takes over the gradient into the recurrent state: commands and paddle send about the same throughout. The value error does not jump, and in the third run it falls. Entropy is lost by the commands and the paddle in the third run, but in the first run the effort's entropy rises instead, as effort switches on. Run 2 recovers to 0.73 once KL drops back. The gradient norm before clipping is 0.85 to 1.7 throughout, so the limit of 0.5 is always active.
+
+**The lower rate removes the fall.** At 0.0001 no run ends more than 0.1 below its own best catch: best 0.780, 0.780, 0.808, last 0.686, 0.760, 0.740. But it does not make C6 learn the task. Mean at the last checkpoint: catch 0.729, correct 0.315, attention at the target 0.426, against the neutral 0.402 and the hand-written 0.770.
+
+So the loss of the paddle is a technical instability of PPO at rate 0.0003, too large a policy step, and a lower rate fixes it. The main obstacle stays: even stable, and even at 10 steps, the controller does not learn to steer attention, and without that the answer stays near chance. What follows is decided separately.
