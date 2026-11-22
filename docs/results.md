@@ -1617,3 +1617,20 @@ The other candidates do not hold in every fall. No head takes over the gradient 
 **The lower rate removes the fall.** At 0.0001 no run ends more than 0.1 below its own best catch: best 0.780, 0.780, 0.808, last 0.686, 0.760, 0.740. But it does not make C6 learn the task. Mean at the last checkpoint: catch 0.729, correct 0.315, attention at the target 0.426, against the neutral 0.402 and the hand-written 0.770.
 
 So the loss of the paddle is a technical instability of PPO at rate 0.0003, too large a policy step, and a lower rate fixes it. The main obstacle stays: even stable, and even at 10 steps, the controller does not learn to steer attention, and without that the answer stays near chance. What follows is decided separately.
+
+## Planned: a hand regulator fed by different sources
+
+Registered before the runs. An extension beyond the protocol of the specification, which tests hypothesis 1 without reinforcement learning, since C6 failed there. The controller is the hand-written policy over the inputs of C6, unchanged except for one thing: the centre of attention it subtracts from the forecast of the target comes from a source, not from the resource map. The policy is fixed, only the source changes, so any difference in catch, answers and attention at the target is the value of that knowledge of attention for control.
+
+- **Sources.** The true map, as before; and recurrent probes reading the history of the schema's inputs together, the telemetry alone, the perceptual summary alone, the commands alone, and the step number alone, which stands for no knowledge of attention.
+- **Probes.** As in F4: a GRU of 64 units with row and column classes, trained on the true centre of attention, so each probe is an upper bound on what a schema reading that source could know. The regulator reads the expectation of each axis under the probe's distribution, not the most likely class.
+- **Training data.** The neutral policy does not resemble the regulator, so the probes learn from episodes driven by the regulator with the true map, where each step's command is replaced by a uniformly random one with probability 0.5; effort is 0, the paddle and the answer as in the regulator. 32000 episodes from the F4 seeds, 25600 for training; 96000 updates, batch 32, Adam at 0.001; the last update is read.
+- **Evaluation.** The regulator, closed loop, on the 2000 control seeds of `target:check`, with each probe run step by step on its own episode. With the true map it gives the row of the hand-written policy: catch 0.764, correct 0.731, attention at the target 0.661.
+
+Readings, fixed now:
+
+1. Knowledge of attention matters for this regulator if the true map beats the step number by at least 0.1 in both catch and correct answers.
+2. The schema's inputs give better control than the telemetry alone if the 95% paired bootstrap interval, over the 2000 evaluation episodes, of the difference in the mean of catch and correct lies above zero. The interval covers episodes, not the training of the probes: there is one probe per source.
+3. Each single source is reported against the true map in all three measures, with the probe's error on held-out episodes and its error along the regulator's own path.
+
+A small trial run before this registration, 2000 episodes and 2000 updates, 1000 evaluation episodes: schema inputs 0.744 catch and 0.685 correct, telemetry 0.738 and 0.702, perception 0.538 and 0.404, commands 0.495 and 0.369, step number 0.454 and 0.352.
