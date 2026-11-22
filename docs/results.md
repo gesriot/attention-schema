@@ -1447,7 +1447,7 @@ Run as registered above, in the frozen world: three runs at each rate, 3000 upda
 | 0.001 | 0.341 | 0.262 | 0.160 | 0.282 | −0.96 |
 | 0.003 | 0.324 | 0.242 | 0.152 | 0.214 | −1.00 |
 
-The runs at one rate differ by up to 0.1 in catch. **C6 is not ready**: no rate reaches 0.6 on either measure. The controller learns to move the paddle a little, from 0.2 to about 0.35, and keeps attention on the target less often than the neutral policy does, 16% of steps against 25%. By the registration, what follows is decided separately.
+The runs at one rate differ by up to 0.1 in catch. **C6 is not ready**: no rate reaches 0.6 on either measure. The controller learns to move the paddle a little, from 0.2 to about 0.35, and keeps the centre of attention within one cell of the target on 16% of steps, no more than the neutral policy does, 18% on the same measure. By the registration, what follows is decided separately.
 
 **A diagnostic, not a verdict: can the controller even copy the hand-written policy?** The same network, trained by cross-entropy to copy the hand-written policy over the inputs of C6 on episodes that policy drives, 64 episodes per update, rate 0.001. The copy is then run on its own, greedily, on 256 evaluation episodes.
 
@@ -1535,7 +1535,7 @@ Run as registered above: three runs per mode, 2000 updates, about 7.7 s per upda
 
 **Neither mode closes its half**, so by the registration both halves block. They do not block equally.
 
-- **Steering attention barely moves.** With the paddle and the answer given, PPO raises attention at the target from 0.12 of steps to 0.27, against 0.25 for the neutral policy and 0.65 for the hand-written commands. Catch and answers rise only as far as better attention makes them rise.
+- **Steering attention barely moves.** With the paddle and the answer given, PPO raises attention at the target from 0.12 of steps to 0.27, against 0.18 for the neutral policy and 0.65 for the hand-written commands. Catch and answers rise only as far as better attention makes them rise.
 - **The downstream half half-learns.** With attention given, the answer reaches 0.64, near the hand-written 0.73. The paddle does not hold: catch climbs to about 0.53 by update 1000, then wanders, and one run falls from 0.57 to 0.34. The paddle needs only the column of slot 0 at the last step, yet it is rewarded once, at the end, for 30 moves.
 
 With one reward at the end of a 30-step episode, PPO here learns what the answer needs and little of what the paddle needs, and almost nothing of steering attention, whose effect on the reward passes through perception and then through the paddle and the answer. What follows is decided separately.
@@ -1562,4 +1562,6 @@ Run as registered above, about 11 hours. Last checkpoint, 500 evaluation episode
 | 0.95 | 256 | 0.325 | 0.331 | 0.142 | 0.368/0.348, 0.204/0.332, 0.404/0.314 |
 | 1 | 256 | 0.376 | 0.297 | 0.166 | 0.390/0.292, 0.380/0.306, 0.358/0.292 |
 
-**No cell passes.** All three stay within about 0.05 of the reference and below it in catch; attention at the target stays below the 0.25 of the neutral policy in every cell. Neither the reach of the final reward to early steps nor the variance of its estimate is what holds the controller back. By the registration, what follows is decided separately.
+**No cell passes.** All three stay within about 0.05 of the reference and below it in catch; attention at the target stays at or below the 0.18 of the neutral policy in every cell. Neither the reach of the final reward to early steps nor the variance of its estimate is what holds the controller back. By the registration, what follows is decided separately.
+
+**A correction to the three sections above.** They first compared the controller's attention at the target with 0.25 for the neutral policy. That number is the F6 measure, a resource share of at least 0.5 on the target, while the C6 tables count steps with the centre of attention within one cell of the target. On the C6 measure the neutral policy scores 0.18, with random or with no effort, on the control seeds. The figures above now use it. The conclusions stand: the controller of C6 steers no better than random commands, and with the paddle and the answer given it steers a little better, far from the hand-written 0.65.
