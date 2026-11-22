@@ -1590,3 +1590,12 @@ Run as registered above, about 2 hours. Last checkpoint, 500 evaluation episodes
 - **Steering learns better when the chain is short, but not enough.** With the paddle and the answer given, PPO closes 0.40 of the gap from the neutral policy to the hand-written one, against 0.19 at 30 steps, and is still slowly rising. Catch is 0.845, near the hand-written 0.897.
 
 Shortening the episode makes steering easier to learn, but C6 does not even hold what it learns at 10 steps: the paddle, learned early, collapses while the controller learns the other heads. What follows is decided separately.
+
+## Planned: why C6 loses the paddle
+
+Registered before the runs. A diagnostic, not a verdict. In two of the three C6 runs at 10 steps catch climbs to about 0.70 and then falls to about 0.23. The reward of the collected episodes falls with it, around update 900 in the first run, and effort switches on at the same time, so the fall is real and not an artefact of greedy evaluation.
+
+- **Instrumented replay.** The three runs at 10 steps are repeated with logging that changes no computation; the checkpoints must match the first runs exactly. Every update logs the mean entropy of each head over the collected steps, the approximate KL divergence between the old and the new policy and the share of clipped samples, the gradient norm before clipping, the gradient that each head sends into the recurrent state, and the error of the value head.
+- **A lower rate.** C6 at 10 steps with rate 0.0001, otherwise as before, three runs.
+
+The reading is descriptive. A technical cause is named if the fall coincides, in every run that falls, with one of: a head losing its entropy, a jump in KL or in clipping, the gradient into the recurrent state being taken over by one head, or a jump in the value error. The lower rate removes the fall if no run ends more than 0.1 below its own best catch. What follows is decided separately: a fix inside the specification, a new setup of the world, or stating that the target mode is not feasible within this budget.
