@@ -1634,3 +1634,22 @@ Readings, fixed now:
 3. Each single source is reported against the true map in all three measures, with the probe's error on held-out episodes and its error along the regulator's own path.
 
 A small trial run before this registration, 2000 episodes and 2000 updates, 1000 evaluation episodes: schema inputs 0.744 catch and 0.685 correct, telemetry 0.738 and 0.702, perception 0.538 and 0.404, commands 0.495 and 0.369, step number 0.454 and 0.352.
+
+## A hand regulator fed by different sources
+
+Run as registered above, about 3.4 hours, with a script outside the bench: the trial and the full run used the same code, which is not yet a command of `web/` (see the plans at the top). 2000 control seeds; the error of a probe is in cells, on held-out episodes of its training data and along the regulator's own path.
+
+| Source of the centre of attention | Caught | Correct | Attention at target | Probe error, held out | Probe error, own path |
+| :-- | --: | --: | --: | --: | --: |
+| True map | 0.764 | 0.731 | 0.661 | 0 | 0 |
+| Schema inputs together | 0.722 | 0.675 | 0.587 | 0.587 | 0.507 |
+| Telemetry alone | 0.745 | 0.694 | 0.579 | 0.813 | 0.792 |
+| Perception alone | 0.614 | 0.506 | 0.443 | 1.087 | 2.061 |
+| Commands alone | 0.488 | 0.365 | 0.143 | 5.221 | 5.540 |
+| Step number alone | 0.439 | 0.342 | 0.131 | 5.582 | 8.501 |
+
+1. **Knowledge of attention matters for this regulator.** The true map beats the step number by 0.325 in catch and 0.390 in correct answers, well over 0.1. With the same perception, paddle and answer, a regulator that does not know where its attention is catches and answers little better than C0 with perception, 0.349 and 0.292.
+2. **The schema's inputs do not give better control than the telemetry alone; they give worse.** The difference in the mean of catch and correct is −0.022, 95% interval from −0.037 to −0.006 over episodes, with one probe per source. The schema's estimate is the more accurate, 0.51 against 0.79 cells along the regulator's path, and keeps attention at the target on slightly more steps, yet the regulator using it catches and answers less.
+3. **Single sources.** Perception alone is worth more here than under the neutral policy: the regulator keeps attention near the target, so the target's position says where attention probably is, and the estimate from it more than triples attention at the target over no knowledge. The commands are worth almost nothing, as in F4. The true map stays ahead of every estimate: by 0.028 over the telemetry and 0.050 over the schema's inputs in the mean of catch and correct.
+
+A possible reading of point 2, not tested: an estimate that leans on the perceptual summary errs toward the target, so it understates the offset between target and attention exactly when attention drifts away and a correction is needed, while the errors of the telemetry do not depend on the target. If so, accuracy of a schema is not the same as its value for control, and an estimate fed by the first order can be the worse regulator. This is the concern behind C7. A test is in the plans.
