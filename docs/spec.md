@@ -766,6 +766,8 @@ Hence the rules:
 10. **Port to Rust** with byte-for-byte comparison, if it was not needed earlier.
 11. **The laboratory** and publication.
 
+**Status, 22 November 2026.** Steps 1 to 4 are done, step 4 with the partial F4 stated above. Step 5 stopped at C6, which fails; steps 6 to 9 are blocked by it, and steps 10 and 11 wait, apart from a laboratory for level 0. The plans are at the top of `docs/results.md`.
+
 Steps 1 to 3 anchor the bench to the literature. Steps 4 to 8 test hypotheses 1 to 4. Step 9 tests hypothesis 5. A positive outcome of all steps is an argument for the control function of the schema in small systems, not for AST as a theory of consciousness.
 
 ### Acceptance criteria

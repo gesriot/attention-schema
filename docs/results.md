@@ -1,6 +1,23 @@
 # Bench results
 
-*Status as of 4 November 2026. The setup is in [spec.md](spec.md). All numbers can be reproduced with commands from the `web/` directory.*
+*Status as of 22 November 2026: the work is paused. The setup is in [spec.md](spec.md). All numbers can be reproduced with commands from the `web/` directory, except the diagnostics and the regulator marked as run with a script outside the bench.*
+
+## Status and plans
+
+**Done.** Level 0: the manual checks, the replication of Wilterson & Graziano with and without the schema and with the command history, the exploratory tests T1 to T15 and the first stage of schema emergence (E6) at noise 0.5. The target world: the world, the attention mechanism with resource, capture and effort, the measurement, the telemetry, the hand-written perception, the feasibility controls C0, F2 and F6, and the hand-written policy over the inputs of C6. The laboratory covers level 0.
+
+**Where it stopped.** F4 passes in part, and the setup is frozen with that. C6 fails: a controller given the true resource map does not learn to steer attention by PPO from the one reward at the end of the episode. A wider network, other PPO settings, short episodes and a lower rate did not change this; the sections from "Control C6" on record each attempt. The specification forbids rewards for attention, so steps 6 to 9 of its work order, which compare learned controllers, stay blocked until C6 passes or the setup is changed. A hand-written regulator, outside the protocol, shows instead that knowledge of attention is worth about 0.3 in catch and 0.4 in correct answers, and that the schema's inputs regulate no better than the telemetry alone.
+
+**Plans, in order.**
+
+1. **The regulator as a command of the bench.** Move the script into `web/` as `target:regulator`, reproducing the table in "A hand regulator fed by different sources". Then test the reading of its second point: whether the schema's estimate errs toward the target, and whether a schema estimate without the perceptual summary regulates as well as the telemetry.
+2. **The schema as a model, without control.** E2B: whether the estimate recovers after the telemetry is blocked. The probe half of E5: whether the threshold of registration of a weak stimulus moves with the telemetry noise.
+3. **E6 at several noise levels** on the level 0 DQN, the main dependence of Piefke et al.
+4. **A last attempt at C6 within the specification:** a separate value network instead of the shared recurrent state, and rate 0.0001 at 30 steps.
+5. **Acceptance checks:** tests that each intervention changes exactly the stated state, and a pass that reproduces every number of this file with the commands of the README.
+6. **The laboratory, target world:** the resource map, the telemetry, the perception, flashes and effort, the regulator's estimate beside the true map, noise and capture sliders.
+7. **The Rust port,** once the TypeScript work is finished, with byte-for-byte comparison.
+8. **Attention in a language model,** the extension "Attention in James's sense" of the specification.
 
 ## Level 0: manual checks
 
