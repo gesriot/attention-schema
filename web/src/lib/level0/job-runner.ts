@@ -9,6 +9,8 @@ type PoolOptions<Job, Progress> = {
   filename: (job: Job) => string;
   worker: URL;
   onProgress?: (job: Job, progress: Progress) => void;
+  workerData?: (job: Job) => unknown;
+  reuseSaved?: boolean;
 };
 
 export async function runStoredJobs<Job, Result, Progress>(
@@ -26,7 +28,7 @@ export async function runStoredJobs<Job, Result, Progress>(
     if (JSON.stringify(stored.job) !== JSON.stringify(job)) {
       throw new Error(`Сохранённое обучение получено с другими параметрами: ${file}`);
     }
-    return stored.result;
+    return options.reuseSaved === false ? null : stored.result;
   });
   if (options.out !== null && saved.some((result) => result === null)) {
     mkdirSync(options.out, { recursive: true });
@@ -43,7 +45,9 @@ export async function runStoredJobs<Job, Result, Progress>(
         continue;
       }
       results[index] = await new Promise<Result>((resolveResult, reject) => {
-        const worker = new Worker(options.worker, { workerData: job });
+        const worker = new Worker(options.worker, {
+          workerData: options.workerData === undefined ? job : options.workerData(job),
+        });
         active.add(worker);
         let result: Result | undefined;
         worker.on(

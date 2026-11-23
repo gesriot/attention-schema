@@ -14,7 +14,7 @@ import type { Progress } from "./train-worker.ts";
 import { runStoredJobs } from "./job-runner.ts";
 import { parseTrainingOptions, type TrainingOptions } from "./cli-options.ts";
 
-export type Options = TrainingOptions<Condition>;
+export type Options = TrainingOptions<Condition> & { saveModel?: string };
 // Single checkpoints swing widely under this training, so the summary averages the last ones.
 const tailPoints = 10;
 const conditionNames: Record<Condition, string> = {
@@ -36,7 +36,25 @@ const checkNames: Record<Check, string> = {
 };
 
 export function parseOptions(args: string[]): Options {
-  return parseTrainingOptions(args, conditions, 10, undefined, true);
+  const remaining: string[] = [];
+  let saveModel: string | undefined;
+  for (let i = 0; i < args.length; i += 2) {
+    const flag = args[i]!;
+    const value = args[i + 1];
+    if (flag === "--save-model") {
+      if (saveModel !== undefined || value === undefined || !value.trim() || value.startsWith("--"))
+        throw new Error("Нужен один каталог для --save-model");
+      saveModel = value;
+    } else {
+      remaining.push(flag);
+      if (value !== undefined) remaining.push(value);
+    }
+  }
+  const options = parseTrainingOptions(remaining, conditions, 10, undefined, true);
+  if (saveModel === undefined) return options;
+  if (options.out !== null && resolve(options.out) === resolve(saveModel))
+    throw new Error("Каталоги результатов и моделей должны различаться.");
+  return { ...options, saveModel };
 }
 
 export async function runJobs(
@@ -63,7 +81,17 @@ export async function runJobs(
     workers: options.workers,
     out: options.out,
     filename: (job) => `${job.condition}-${job.subject}.json`,
-    worker: new URL("./train-worker.ts", import.meta.url),
+    worker: new URL(
+      options.saveModel === undefined ? "./train-worker.ts" : "./model-export-worker.ts",
+      import.meta.url,
+    ),
+    ...(options.saveModel === undefined
+      ? {}
+      : {
+          // Cached curve summaries contain no weights, so export requires actual training.
+          reuseSaved: false,
+          workerData: (job: TrainJob) => ({ ...job, saveModel: options.saveModel }),
+        }),
     onProgress,
   });
 }
